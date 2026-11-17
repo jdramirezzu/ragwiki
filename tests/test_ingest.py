@@ -3,7 +3,9 @@ import subprocess
 import pytest
 from conftest import ScriptedModel
 
-from wikinotes.ingest import IngestError, ingest
+from wikinotes.domain import Source
+from wikinotes.extract import number_blocks
+from wikinotes.ingest import IngestError, ingest, split_source
 
 CELLS = "# Cell biology\n\nThe cell is the unit of life.\n\nMitochondria produce ATP.\n"
 ENERGY = "# Energy\n\nATP stores energy in phosphate bonds.\n"
@@ -163,3 +165,91 @@ def test_the_same_file_is_not_ingested_twice(vault, note):
     assert result.skipped
     assert result.source_id == "src-cell-biology"
     assert model.calls == []
+
+
+# With a 48-token window a part holds 12 tokens: the heading and the first paragraph of
+# CELLS fill one part and the second paragraph goes to the next.
+SMALL_WINDOW = 48
+PART_1 = (
+    {"update": [], "create": [{"slug": "cell", "title": "Cell", "summary": "Unit of life."}]},
+    {
+        "pages": [
+            {
+                "slug": "cell",
+                "title": "Cell",
+                "summary": "Unit of life.",
+                "body": "The cell is the unit of life [[src-cell-biology#^p1]].",
+            }
+        ]
+    },
+)
+PART_2 = (
+    {"update": ["cell"], "create": []},
+    {
+        "pages": [
+            {
+                "slug": "cell",
+                "title": "Cell",
+                "summary": "Unit of life, powered by mitochondria.",
+                "body": "The cell is the unit of life [[src-cell-biology#^p1]]. "
+                "Mitochondria produce ATP [[src-cell-biology#^p2]].",
+            }
+        ]
+    },
+)
+
+
+def test_split_source_keeps_a_heading_with_its_text_and_an_oversized_block_alone():
+    blocks = number_blocks("# A\n\nshort one\n\n## B\n\n" + "long " * 40 + "\n\nshort two")
+    source = Source(title="A", original="a.md", sha256="0", blocks=blocks, id="src-a")
+
+    parts = split_source(source, max_tokens=8)
+
+    assert [[block.anchor or block.text for block in part] for part in parts] == [
+        ["# A", "p1"],
+        ["## B", "p2"],
+        ["p3"],
+    ]
+
+
+def test_a_source_larger_than_the_window_is_ingested_in_parts(vault, note):
+    model = ScriptedModel(*PART_1, *PART_2)
+    progress = []
+
+    result = ingest(
+        vault,
+        model,
+        note("cells.md", CELLS),
+        context_tokens=SMALL_WINDOW,
+        on_progress=progress.append,
+    )
+
+    prompts = [user for _, user in model.calls]
+    assert len(prompts) == 4
+    assert "[p1] The cell is the unit of life." in prompts[0]
+    assert "Mitochondria produce ATP." not in prompts[0]
+    assert "part 2 of 2" in prompts[2]
+    assert "[p2] Mitochondria produce ATP." in prompts[2]
+    # The second part sees the page the first part wrote, although it is not on disk yet.
+    assert "- [[cell]] (concept): Unit of life." in prompts[2]
+    assert '<page slug="cell" title="Cell">' in prompts[3]
+    assert (result.created, result.updated) == (["cell"], [])
+    assert vault.read_page("cell").summary == "Unit of life, powered by mitochondria."
+    assert list(vault.sources()) == ["src-cell-biology"]
+    assert vault.load_source("src-cell-biology").paragraphs["p2"] == "Mitochondria produce ATP."
+    assert [(p.part, p.parts, p.stage) for p in progress] == [
+        (1, 2, "planning"),
+        (1, 2, "writing"),
+        (2, 2, "planning"),
+        (2, 2, "writing"),
+    ]
+
+
+def test_a_failure_in_a_later_part_leaves_the_vault_untouched(vault, note):
+    before = snapshot(vault)
+    model = ScriptedModel(*PART_1, "nope", "still nope")
+
+    with pytest.raises(IngestError):
+        ingest(vault, model, note("cells.md", CELLS), context_tokens=SMALL_WINDOW)
+
+    assert snapshot(vault) == before

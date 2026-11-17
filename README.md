@@ -49,10 +49,13 @@ uv sync
 | `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Your provider's price in USD per million tokens, so costs are reported |
 | `WIKINOTES_MAX_USD` | Spending cap for one command |
 | `WIKINOTES_VAULT` | Vault folder, when you are not inside it |
+| `WIKINOTES_CONTEXT_TOKENS` | Your model's context window in tokens (default 32000). Lower it for small local models |
 
 Today wikinotes reads Markdown and text (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
-PowerPoint (`.pptx`) and Excel (`.xlsx`). A PDF needs a text layer; scans are not read yet. A source must fit in the model's context
-window; splitting long documents is planned.
+PowerPoint (`.pptx`) and Excel (`.xlsx`). A PDF needs a text layer; scans are not read yet.
+
+A source larger than the model's context window is split into parts, and nothing is written
+unless every part succeeds. Paragraphs are never cut, so citations stay exact.
 
 ## Why a wiki and not just search
 

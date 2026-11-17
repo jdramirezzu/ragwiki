@@ -9,13 +9,14 @@ import typer
 from wikinotes import __version__
 from wikinotes.ask import ask as answer_question
 from wikinotes.extract import UnreadableSource, UnsupportedFormat
-from wikinotes.ingest import IngestError, ingest
+from wikinotes.ingest import IngestError, Progress, ingest
 from wikinotes.models import (
     BudgetExceeded,
     ConfigError,
     MeteredModel,
     Model,
     ModelError,
+    context_tokens_from_env,
     metered_from_env,
 )
 from wikinotes.vault import STATE_DIR, Vault, VaultError
@@ -61,6 +62,11 @@ def _print_cost(model: Model) -> None:
         typer.echo(f"Model calls: {model.calls}, cost: ${model.spent_usd:.4f}")
 
 
+def _print_progress(progress: Progress) -> None:
+    if progress.parts > 1:
+        typer.echo(f"{progress.file}: part {progress.part} of {progress.parts}, {progress.stage}")
+
+
 def _print_version(value: bool) -> None:
     if value:
         typer.echo(f"wikinotes {__version__}")
@@ -99,9 +105,19 @@ def add(
     opened = _open_vault(vault)
     model = _open_model(opened)
     try:
+        context_tokens = context_tokens_from_env()
+    except ConfigError as error:
+        raise _fail(str(error)) from error
+    try:
         for path in files:
             try:
-                result = ingest(opened, model, path)
+                result = ingest(
+                    opened,
+                    model,
+                    path,
+                    context_tokens=context_tokens,
+                    on_progress=_print_progress,
+                )
             except (
                 UnsupportedFormat,
                 UnreadableSource,

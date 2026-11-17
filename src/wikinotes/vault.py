@@ -156,15 +156,20 @@ class Vault:
 
     # --- index, log, history ---------------------------------------------------------
 
-    def rebuild_index(self) -> None:
+    def index_text(self, pending: dict[str, Page] | None = None) -> str:
+        """The catalog of pages and sources. `pending` holds pages not written to disk yet."""
+        pending = pending or {}
         lines = ["# Index", "", "## Pages", ""]
-        for slug in self.page_slugs():
-            page = self.read_page(slug)
+        for slug in sorted(set(self.page_slugs()) | set(pending)):
+            page = pending.get(slug) or self.read_page(slug)
             lines.append(f"- [[{slug}]] ({page.type}): {page.summary}")
         lines += ["", "## Sources", ""]
         for source_id, entry in sorted(self.sources().items()):
             lines.append(f"- [[{source_id}]]: {entry['title']}")
-        (self.root / "index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return "\n".join(lines) + "\n"
+
+    def rebuild_index(self) -> None:
+        (self.root / "index.md").write_text(self.index_text(), encoding="utf-8")
 
     def index(self) -> str:
         return (self.root / "index.md").read_text(encoding="utf-8")

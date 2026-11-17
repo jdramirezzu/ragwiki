@@ -51,11 +51,15 @@ uv sync
 | `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Precio de tu proveedor en USD por millón de tokens, para reportar el costo |
 | `WIKINOTES_MAX_USD` | Tope de gasto de un comando |
 | `WIKINOTES_VAULT` | Carpeta de la wiki, cuando no estás dentro de ella |
+| `WIKINOTES_CONTEXT_TOKENS` | Ventana de contexto de tu modelo en tokens (32000 por defecto). Bájala para modelos locales pequeños |
 
 Hoy wikinotes lee Markdown y texto (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
 PowerPoint (`.pptx`) y Excel (`.xlsx`). Un PDF necesita una capa de texto; los escaneos aún
-no se leen. Una fuente debe caber en la ventana de contexto del modelo; dividir documentos
-largos está planeado.
+no se leen.
+
+Una fuente más grande que la ventana de contexto del modelo se divide en partes, y no se
+escribe nada a menos que todas las partes salgan bien. Los párrafos nunca se cortan, así
+que las citas siguen siendo exactas.
 
 ## Por qué una wiki y no solo búsqueda
 

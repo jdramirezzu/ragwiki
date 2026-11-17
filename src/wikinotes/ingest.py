@@ -3,6 +3,10 @@
 The model is asked twice: first for a plan (which pages to create or update), then for the
 full text of those pages. It only ever returns JSON. This module validates that JSON and
 writes the vault, and it writes nothing unless the whole ingestion is valid.
+
+A source that does not fit in the model's context window is split into parts. Each part
+goes through the same two calls and sees the pages written by the parts before it, which
+are held in memory until the last part is valid.
 """
 
 import re
@@ -12,13 +16,16 @@ from datetime import date
 from pathlib import Path
 from typing import TypeVar
 
-from wikinotes.domain import Page, Source, slugify
-from wikinotes.extract import extract
-from wikinotes.models import Model, extract_json
+from wikinotes.domain import Block, Page, Source, slugify
+from wikinotes.extract import extract, file_hash
+from wikinotes.models import DEFAULT_CONTEXT_TOKENS, Model, estimate_tokens, extract_json
 from wikinotes.vault import Vault
 
 MAX_UPDATES = 6
 MAX_CREATES = 4
+# Share of the context window one part of a source may fill. The rest is left for the
+# system prompt, the index, the pages being updated and the model's reply.
+PART_SHARE = 4
 SOURCE_PREFIX = "src-"
 
 SYSTEM = """You maintain a personal wiki built from the user's own study material.
@@ -53,6 +60,16 @@ class IngestResult:
     skipped: bool = False
 
 
+@dataclass(frozen=True)
+class Progress:
+    """Reported before each model call, so an interface can show where a long ingestion is."""
+
+    file: str
+    part: int
+    parts: int
+    stage: str  # "planning" or "writing"
+
+
 @dataclass
 class _Plan:
     update: list[str]
@@ -61,6 +78,23 @@ class _Plan:
     @property
     def slugs(self) -> list[str]:
         return self.update + [entry["slug"] for entry in self.create]
+
+
+class _Draft:
+    """The wiki as it will be once this ingestion is applied: the vault plus pending pages."""
+
+    def __init__(self, vault: Vault) -> None:
+        self.vault = vault
+        self.pending: dict[str, Page] = {}
+
+    def slugs(self) -> set[str]:
+        return set(self.vault.page_slugs()) | set(self.pending)
+
+    def read(self, slug: str) -> Page:
+        return self.pending.get(slug) or self.vault.read_page(slug)
+
+    def index(self) -> str:
+        return self.vault.index_text(self.pending) if self.pending else self.vault.index()
 
 
 class Paragraphs:
@@ -109,18 +143,51 @@ def clean_body(body: str, linkable: set[str], paragraphs: Paragraphs) -> tuple[s
     return cleaned, sorted(cited), dropped
 
 
-def render_source(source: Source) -> str:
-    lines = [f'<source id="{source.id}" title="{source.title}">']
+def split_source(source: Source, max_tokens: int) -> list[tuple[Block, ...]]:
+    """Cut a source into consecutive parts of at most `max_tokens` (estimated).
+
+    Paragraphs are never cut, so their anchors stay valid: a single paragraph larger than
+    the limit becomes a part on its own. A heading is kept with the text that follows it.
+    """
+    parts: list[tuple[Block, ...]] = []
+    current: list[Block] = []
+    size = 0
     for block in source.blocks:
+        cost = estimate_tokens(block.text)
+        if size + cost > max_tokens and any(b.anchor for b in current):
+            carried: list[Block] = []
+            while current[-1].anchor is None:
+                carried.insert(0, current.pop())
+            parts.append(tuple(current))
+            current = carried
+            size = sum(estimate_tokens(b.text) for b in current)
+        current.append(block)
+        size += cost
+    if any(b.anchor for b in current):
+        parts.append(tuple(current))
+    elif parts:
+        parts[-1] += tuple(current)
+    return parts
+
+
+def render_source(source: Source, blocks: tuple[Block, ...], part: int = 1, parts: int = 1) -> str:
+    of = f' part="{part} of {parts}"' if parts > 1 else ""
+    lines = [f'<source id="{source.id}" title="{source.title}"{of}>']
+    for block in blocks:
         lines.append(f"[{block.anchor}] {block.text}" if block.anchor else block.text)
     lines.append("</source>")
+    if parts > 1:
+        lines.append(
+            f"This is part {part} of {parts} of a long source. Pages written from the earlier "
+            "parts are already in the wiki: update them instead of creating duplicates."
+        )
     return "\n".join(lines)
 
 
-def _plan_prompt(source: Source, index: str) -> str:
+def _plan_prompt(rendered: str, index: str) -> str:
     return f"""A new source was added. Decide which wiki pages to create or update.
 
-{render_source(source)}
+{rendered}
 
 Current index of the wiki:
 {index}
@@ -133,16 +200,16 @@ Update at most {MAX_UPDATES} pages and create at most {MAX_CREATES}. Prefer upda
 that already covers the idea over creating a near duplicate."""
 
 
-def _write_prompt(source: Source, plan: _Plan, vault: Vault) -> str:
+def _write_prompt(rendered: str, plan: _Plan, draft: _Draft) -> str:
     existing = []
     for slug in plan.update:
-        page = vault.read_page(slug)
+        page = draft.read(slug)
         existing.append(f'<page slug="{slug}" title="{page.title}">\n{page.body}\n</page>')
     new = [f"- {e['slug']}: {e['title']}. {e['summary']}" for e in plan.create]
-    linkable = sorted(set(vault.page_slugs()) | set(plan.slugs))
+    linkable = sorted(draft.slugs() | set(plan.slugs))
     return f"""Write the full text of the planned pages using the new source.
 
-{render_source(source)}
+{rendered}
 
 Pages to update (rewrite each one in full, keeping what is still valid and its citations):
 {chr(10).join(existing) or "(none)"}
@@ -157,8 +224,8 @@ Reply with JSON:
   "body": "<Markdown without a title heading>"}}]}}"""
 
 
-def _parse_plan(data: dict, vault: Vault) -> _Plan:
-    existing = set(vault.page_slugs())
+def _parse_plan(data: dict, draft: _Draft) -> _Plan:
+    existing = draft.slugs()
     update = [s for s in data.get("update") or [] if isinstance(s, str) and s in existing]
     create: list[dict[str, str]] = []
     for entry in data.get("create") or []:
@@ -183,9 +250,9 @@ def _parse_plan(data: dict, vault: Vault) -> _Plan:
 
 
 def _parse_pages(
-    data: dict, plan: _Plan, vault: Vault, paragraphs: Paragraphs
+    data: dict, plan: _Plan, draft: _Draft, paragraphs: Paragraphs
 ) -> tuple[list[Page], int]:
-    linkable = set(vault.page_slugs()) | set(plan.slugs)
+    linkable = draft.slugs() | set(plan.slugs)
     pages: list[Page] = []
     dropped = 0
     for entry in data.get("pages") or []:
@@ -199,7 +266,7 @@ def _parse_pages(
         if not cited:
             # A page that cannot be traced to any source paragraph is not trustworthy.
             continue
-        previous = vault.read_page(slug).sources if slug in plan.update else []
+        previous = draft.read(slug).sources if slug in plan.update else []
         pages.append(
             Page(
                 slug=slug,
@@ -231,36 +298,62 @@ def ask_json(model: Model, system: str, user: str, parse: Callable[[dict], T]) -
             raise IngestError(f"The model did not return usable output: {second}") from second
 
 
-def ingest(vault: Vault, model: Model, path: Path) -> IngestResult:
+def ingest(
+    vault: Vault,
+    model: Model,
+    path: Path,
+    *,
+    context_tokens: int = DEFAULT_CONTEXT_TOKENS,
+    on_progress: Callable[[Progress], None] | None = None,
+) -> IngestResult:
+    """Add one file to the vault and let the model update the wiki with it.
+
+    `context_tokens` is the size of the model's context window; a larger source is ingested
+    in parts. `on_progress` is called before every model call.
+    """
     path = Path(path)
-    source = extract(path)
+    sha256 = file_hash(path)
     for source_id, entry in vault.sources().items():
-        if entry["sha256"] == source.sha256:
+        if entry["sha256"] == sha256:
             return IngestResult(source_id=source_id, skipped=True)
+    source = extract(path)
     source = replace(source, id=vault.new_id(source.title))
     system = SYSTEM + vault.schema()
     paragraphs = Paragraphs(vault, extra=source)
+    draft = _Draft(vault)
+    existing = set(vault.page_slugs())
+    dropped = 0
 
-    plan = ask_json(
-        model, system, _plan_prompt(source, vault.index()), lambda d: _parse_plan(d, vault)
-    )
-    pages, dropped = ask_json(
-        model,
-        system,
-        _write_prompt(source, plan, vault),
-        lambda d: _parse_pages(d, plan, vault, paragraphs),
-    )
+    def report(part: int, parts: int, stage: str) -> None:
+        if on_progress is not None:
+            on_progress(Progress(path.name, part, parts, stage))
 
-    # Everything is valid: only now does the vault change.
+    parts = split_source(source, max(1, context_tokens // PART_SHARE))
+    for number, blocks in enumerate(parts, start=1):
+        rendered = render_source(source, blocks, number, len(parts))
+        report(number, len(parts), "planning")
+        plan = ask_json(
+            model, system, _plan_prompt(rendered, draft.index()), lambda d: _parse_plan(d, draft)
+        )
+        report(number, len(parts), "writing")
+        pages, lost = ask_json(
+            model,
+            system,
+            _write_prompt(rendered, plan, draft),
+            lambda d, plan=plan: _parse_pages(d, plan, draft, paragraphs),
+        )
+        dropped += lost
+        draft.pending.update({page.slug: page for page in pages})
+
+    # Every part is valid: only now does the vault change.
     vault.add_source(source, path)
-    for page in pages:
+    for page in draft.pending.values():
         vault.write_page(page)
     vault.rebuild_index()
-    written = {page.slug for page in pages}
     result = IngestResult(
         source_id=source.id,
-        created=sorted(e["slug"] for e in plan.create if e["slug"] in written),
-        updated=sorted(slug for slug in plan.update if slug in written),
+        created=sorted(set(draft.pending) - existing),
+        updated=sorted(set(draft.pending) & existing),
         dropped_citations=dropped,
     )
     vault.append_log(

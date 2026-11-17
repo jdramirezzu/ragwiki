@@ -17,6 +17,18 @@ class Reply:
     output_tokens: int = 0
 
 
+DEFAULT_CONTEXT_TOKENS = 32_000
+
+
+def estimate_tokens(text: str) -> int:
+    """A rough token count: about four characters per token.
+
+    Good enough to split long sources and to forecast cost without depending on any
+    provider's tokenizer. Real counts come back from the provider after each call.
+    """
+    return (len(text) + 3) // 4
+
+
 class Model(Protocol):
     def complete(self, system: str, user: str) -> Reply: ...
 
@@ -121,6 +133,16 @@ def _env_float(name: str) -> float | None:
         return float(raw)
     except ValueError as error:
         raise ConfigError(f"{name} must be a number, got '{raw}'") from error
+
+
+def context_tokens_from_env() -> int:
+    """The model's context window, which decides when a long source is split into parts."""
+    value = _env_float("WIKINOTES_CONTEXT_TOKENS")
+    if value is None:
+        return DEFAULT_CONTEXT_TOKENS
+    if value < 1:
+        raise ConfigError(f"WIKINOTES_CONTEXT_TOKENS must be a positive number, got '{value:g}'")
+    return int(value)
 
 
 def model_from_env() -> OpenAICompatibleModel:

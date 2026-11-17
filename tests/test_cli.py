@@ -1,5 +1,5 @@
 from conftest import ScriptedModel
-from test_ingest import CELLS, PLAN, WRITE
+from test_ingest import CELLS, PART_1, PART_2, PLAN, SMALL_WINDOW, WRITE
 from typer.testing import CliRunner
 
 from wikinotes import __version__
@@ -86,6 +86,30 @@ def test_add_rejects_a_format_it_cannot_read(tmp_path, monkeypatch):
 
     assert result.exit_code == 1
     assert ".xyz" in result.output
+
+
+def test_add_splits_a_source_larger_than_the_configured_window(tmp_path, monkeypatch):
+    vault, note = make_vault_with_note(tmp_path)
+    monkeypatch.setenv("WIKINOTES_CONTEXT_TOKENS", str(SMALL_WINDOW))
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(*PART_1, *PART_2))
+
+    result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
+
+    assert result.exit_code == 0
+    assert "cells.md: part 2 of 2, writing" in result.output
+    assert "created: cell" in result.output
+
+
+def test_add_rejects_a_context_window_that_is_not_a_positive_number(tmp_path, monkeypatch):
+    vault, note = make_vault_with_note(tmp_path)
+    monkeypatch.setenv("WIKINOTES_CONTEXT_TOKENS", "big")
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel())
+
+    result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
+
+    assert result.exit_code == 1
+    assert "WIKINOTES_CONTEXT_TOKENS" in result.output
+    assert not list((vault / "wiki").iterdir())
 
 
 def test_add_reports_a_damaged_document_and_changes_nothing(tmp_path, monkeypatch):

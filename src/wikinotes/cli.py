@@ -8,6 +8,7 @@ import typer
 
 from wikinotes import __version__
 from wikinotes.ask import ask as answer_question
+from wikinotes.ask import cited_paragraph
 from wikinotes.estimate import Estimate, estimate_ingest
 from wikinotes.extract import UnreadableSource, UnsupportedFormat
 from wikinotes.ingest import IngestError, Progress, ingest
@@ -179,12 +180,11 @@ def add(
 
 
 def _describe_citation(vault: Vault, citation: str) -> str:
-    source_id, anchor = citation.split("#^")
-    source = vault.load_source(source_id)
-    excerpt = " ".join(source.paragraphs[anchor].split())
+    cited = cited_paragraph(vault, citation)
+    excerpt = " ".join(cited.text.split())
     if len(excerpt) > 120:
         excerpt = excerpt[:117] + "..."
-    return f"- {citation} ({source.title}): {excerpt}"
+    return f"- {citation} ({cited.source_title}): {excerpt}"
 
 
 @app.command()

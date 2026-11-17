@@ -48,6 +48,23 @@ class Answer:
     steps: int = 0
 
 
+@dataclass(frozen=True)
+class CitedParagraph:
+    """The source paragraph behind a citation, ready to show next to an answer or a page."""
+
+    source_id: str
+    anchor: str
+    source_title: str
+    text: str
+
+
+def cited_paragraph(vault: Vault, citation: str) -> CitedParagraph:
+    """Resolve a citation such as `src-cell-biology#^p2` to its paragraph."""
+    source_id, anchor = citation.split("#^")
+    source = vault.load_source(source_id)
+    return CitedParagraph(source_id, anchor, source.title, source.paragraphs[anchor])
+
+
 class _Seen:
     """Accepts a citation only if it appeared in a page the model read."""
 

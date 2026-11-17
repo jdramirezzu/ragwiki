@@ -88,6 +88,65 @@ def test_add_rejects_a_format_it_cannot_read(tmp_path, monkeypatch):
     assert ".xyz" in result.output
 
 
+def test_add_shows_the_estimate_and_does_not_ask_when_the_price_is_unknown(tmp_path, monkeypatch):
+    vault, note = make_vault_with_note(tmp_path)
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
+
+    result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
+
+    assert result.exit_code == 0
+    assert "Estimate: 1 file(s), about 2 model call(s)" in result.output
+    assert "WIKINOTES_PRICE_INPUT" in result.output
+    assert result.output.index("Estimate:") < result.output.index("added as")
+
+
+def test_add_asks_before_spending_and_stops_on_no(tmp_path, monkeypatch):
+    vault, note = make_vault_with_note(tmp_path)
+    monkeypatch.setenv("WIKINOTES_PRICE_INPUT", "0.5")
+    monkeypatch.setenv("WIKINOTES_PRICE_OUTPUT", "2")
+    model = ScriptedModel(PLAN, WRITE)
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: model)
+
+    result = runner.invoke(app, ["add", str(note), "--vault", str(vault)], input="n\n")
+
+    assert result.exit_code == 1
+    assert "about $0.00" in result.output
+    assert "Continue?" in result.output
+    assert model.calls == []
+    assert not list((vault / "wiki").iterdir())
+
+
+def test_add_goes_ahead_on_yes_and_with_the_yes_flag(tmp_path, monkeypatch):
+    vault, note = make_vault_with_note(tmp_path)
+    other = tmp_path / "energy.md"
+    other.write_text("# Energy\n\nATP stores energy.\n", encoding="utf-8")
+    monkeypatch.setenv("WIKINOTES_PRICE_INPUT", "0.5")
+    monkeypatch.setenv("WIKINOTES_PRICE_OUTPUT", "2")
+    monkeypatch.setattr(
+        "wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE, PLAN, WRITE)
+    )
+
+    answered = runner.invoke(app, ["add", str(note), "--vault", str(vault)], input="y\n")
+    flagged = runner.invoke(app, ["add", str(other), "--vault", str(vault), "--yes"])
+
+    assert answered.exit_code == 0
+    assert "added as src-cell-biology" in answered.output
+    assert flagged.exit_code == 0
+    assert "Continue?" not in flagged.output
+    assert "added as src-energy" in flagged.output
+
+
+def test_add_estimate_only_needs_no_model_and_writes_nothing(tmp_path):
+    vault, note = make_vault_with_note(tmp_path)
+
+    result = runner.invoke(app, ["add", str(note), "--vault", str(vault), "--estimate"])
+
+    assert result.exit_code == 0
+    assert "Estimate: 1 file(s), about 2 model call(s)" in result.output
+    assert "added as" not in result.output
+    assert not list((vault / "wiki").iterdir())
+
+
 def test_add_splits_a_source_larger_than_the_configured_window(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
     monkeypatch.setenv("WIKINOTES_CONTEXT_TOKENS", str(SMALL_WINDOW))

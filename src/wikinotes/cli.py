@@ -8,6 +8,7 @@ import typer
 
 from wikinotes import __version__
 from wikinotes.ask import ask as answer_question
+from wikinotes.estimate import Estimate, estimate_ingest
 from wikinotes.extract import UnreadableSource, UnsupportedFormat
 from wikinotes.ingest import IngestError, Progress, ingest
 from wikinotes.models import (
@@ -18,6 +19,7 @@ from wikinotes.models import (
     ModelError,
     context_tokens_from_env,
     metered_from_env,
+    prices_from_env,
 )
 from wikinotes.vault import STATE_DIR, Vault, VaultError
 
@@ -67,6 +69,18 @@ def _print_progress(progress: Progress) -> None:
         typer.echo(f"{progress.file}: part {progress.part} of {progress.parts}, {progress.stage}")
 
 
+def _print_estimate(estimate: Estimate) -> None:
+    cost = (
+        "price unknown (set WIKINOTES_PRICE_INPUT and WIKINOTES_PRICE_OUTPUT to see it)"
+        if estimate.usd is None
+        else f"about ${estimate.usd:.4f}"
+    )
+    typer.echo(
+        f"Estimate: {estimate.files} file(s), about {estimate.calls} model call(s), "
+        f"{estimate.input_tokens:,} input and {estimate.output_tokens:,} output tokens, {cost}"
+    )
+
+
 def _print_version(value: bool) -> None:
     if value:
         typer.echo(f"wikinotes {__version__}")
@@ -100,14 +114,36 @@ def init(
 def add(
     files: Annotated[list[Path], typer.Argument(help="Files to add.", exists=True, dir_okay=False)],
     vault: VaultOption = None,
+    yes: Annotated[
+        bool, typer.Option("--yes", "-y", help="Do not ask before spending money.")
+    ] = False,
+    estimate_only: Annotated[
+        bool, typer.Option("--estimate", help="Show the estimated cost and stop.")
+    ] = False,
 ) -> None:
-    """Add files to the vault and let the model update the wiki with them."""
+    """Add files to the vault and let the model update the wiki with them.
+
+    The estimated cost is shown first. When it is above zero you are asked to confirm.
+    """
     opened = _open_vault(vault)
-    model = _open_model(opened)
     try:
         context_tokens = context_tokens_from_env()
-    except ConfigError as error:
+        price_input, price_output = prices_from_env()
+        estimate = estimate_ingest(
+            opened,
+            files,
+            context_tokens=context_tokens,
+            price_input=price_input,
+            price_output=price_output,
+        )
+    except (ConfigError, UnsupportedFormat, UnreadableSource) as error:
         raise _fail(str(error)) from error
+    _print_estimate(estimate)
+    if estimate_only:
+        return
+    model = _open_model(opened)
+    if estimate.usd and not yes:
+        typer.confirm("Continue?", abort=True)
     try:
         for path in files:
             try:

@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 
@@ -21,6 +22,14 @@ class ScriptedModel:
         if not self.replies:
             raise AssertionError("The scripted model ran out of replies")
         return Reply(text=self.replies.pop(0), input_tokens=1000, output_tokens=500)
+
+
+@pytest.fixture(autouse=True)
+def no_real_configuration(monkeypatch):
+    """Tests run the same whatever the developer has configured, and never reach a provider."""
+    for name in list(os.environ):
+        if name.startswith("WIKINOTES_"):
+            monkeypatch.delenv(name)
 
 
 @pytest.fixture

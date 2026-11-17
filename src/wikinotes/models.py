@@ -159,12 +159,21 @@ def model_from_env() -> OpenAICompatibleModel:
     )
 
 
+def prices_from_env() -> tuple[float, float]:
+    """Input and output price in USD per million tokens; zero when not configured."""
+    return (
+        _env_float("WIKINOTES_PRICE_INPUT") or 0.0,
+        _env_float("WIKINOTES_PRICE_OUTPUT") or 0.0,
+    )
+
+
 def metered_from_env(log_path: Path) -> MeteredModel:
+    price_input, price_output = prices_from_env()
     return MeteredModel(
         model_from_env(),
         log_path,
-        price_input=_env_float("WIKINOTES_PRICE_INPUT") or 0.0,
-        price_output=_env_float("WIKINOTES_PRICE_OUTPUT") or 0.0,
+        price_input=price_input,
+        price_output=price_output,
         max_usd=_env_float("WIKINOTES_MAX_USD"),
     )
 

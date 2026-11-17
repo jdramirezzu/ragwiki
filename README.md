@@ -54,6 +54,11 @@ uv sync
 Today wikinotes reads Markdown and text (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
 PowerPoint (`.pptx`) and Excel (`.xlsx`). A PDF needs a text layer; scans are not read yet.
 
+Before any model call, `add` prints an estimate of the calls, tokens and price. When the
+price is above zero it asks you to confirm; `--yes` skips the question and `--estimate`
+only shows the estimate. The estimate is rough: token counts are approximated from text
+length, and the real cost of each call is recorded in `.wikinotes/calls.jsonl`.
+
 A source larger than the model's context window is split into parts, and nothing is written
 unless every part succeeds. Paragraphs are never cut, so citations stay exact.
 

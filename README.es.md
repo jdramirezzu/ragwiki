@@ -57,6 +57,12 @@ Hoy wikinotes lee Markdown y texto (`.md`, `.markdown`, `.txt`), PDF, Word (`.do
 PowerPoint (`.pptx`) y Excel (`.xlsx`). Un PDF necesita una capa de texto; los escaneos aún
 no se leen.
 
+Antes de llamar al modelo, `add` muestra una estimación de llamadas, tokens y precio.
+Cuando el precio es mayor que cero te pide confirmar; `--yes` omite la pregunta y
+`--estimate` solo muestra la estimación. La estimación es aproximada: los tokens se
+calculan a partir del largo del texto, y el costo real de cada llamada queda registrado en
+`.wikinotes/calls.jsonl`.
+
 Una fuente más grande que la ventana de contexto del modelo se divide en partes, y no se
 escribe nada a menos que todas las partes salgan bien. Los párrafos nunca se cortan, así
 que las citas siguen siendo exactas.

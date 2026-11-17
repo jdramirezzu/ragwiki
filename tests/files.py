@@ -77,14 +77,3 @@ def make_pptx(path: Path, slides: list[tuple[str, str]]) -> Path:
         slide.placeholders[1].text = text
     deck.save(str(path))
     return path
-
-
-def make_xlsx(path: Path, sheet: str, rows: list[list[str]]) -> Path:
-    import openpyxl
-
-    book = openpyxl.Workbook()
-    book.active.title = sheet
-    for row in rows:
-        book.active.append(row)
-    book.save(str(path))
-    return path

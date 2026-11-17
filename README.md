@@ -57,7 +57,8 @@ No notes at hand? Follow the [walkthrough](docs/demo.md) with the example notes 
 | `WIKINOTES_CONTEXT_TOKENS` | Your model's context window in tokens (default 32000). Lower it for small local models |
 
 Today wikinotes reads Markdown and text (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
-PowerPoint (`.pptx`), Excel (`.xlsx`) and photos of notes (`.png`, `.jpg`, `.jpeg`, `.webp`).
+PowerPoint (`.pptx`) and photos of notes (`.png`, `.jpg`, `.jpeg`, `.webp`). Spreadsheets are
+left out on purpose: they hold data rather than notes.
 
 A photo is transcribed by a model that can see images. The transcription is saved in
 `extracted/` next to your original photo, so you can check it. If your text model cannot

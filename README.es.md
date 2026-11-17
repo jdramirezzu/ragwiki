@@ -59,7 +59,8 @@ ejemplo de [`examples/`](examples/README.md).
 | `WIKINOTES_CONTEXT_TOKENS` | Ventana de contexto de tu modelo en tokens (32000 por defecto). Bájala para modelos locales pequeños |
 
 Hoy wikinotes lee Markdown y texto (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
-PowerPoint (`.pptx`), Excel (`.xlsx`) y fotos de apuntes (`.png`, `.jpg`, `.jpeg`, `.webp`).
+PowerPoint (`.pptx`) y fotos de apuntes (`.png`, `.jpg`, `.jpeg`, `.webp`). Las hojas de
+cálculo quedan fuera a propósito: contienen datos, no apuntes.
 
 Una foto la transcribe un modelo que pueda ver imágenes. La transcripción se guarda en
 `extracted/` junto a tu foto original, para que puedas revisarla. Si tu modelo de texto no

@@ -1,5 +1,5 @@
 import pytest
-from files import PNG, make_docx, make_pdf, make_pptx, make_xlsx
+from files import PNG, make_docx, make_pdf, make_pptx
 
 from wikinotes.extract import (
     MAX_BLOCK_TOKENS,
@@ -110,17 +110,13 @@ def test_slides_keep_their_titles_as_headings_and_drop_converter_comments(tmp_pa
     ]
 
 
-def test_a_spreadsheet_becomes_one_citable_table_per_sheet(tmp_path):
-    path = make_xlsx(
-        tmp_path / "organelles.xlsx", "Organelles", [["Name", "Role"], ["Ribosome", "Proteins"]]
-    )
+def test_spreadsheets_are_not_read(tmp_path):
+    # They hold data rather than notes: real ones came out as hundreds of thousands of tokens.
+    path = tmp_path / "grades.xlsx"
+    path.write_bytes(b"PK")
 
-    source = extract(path)
-
-    assert [block.text for block in source.blocks if block.anchor is None] == ["## Organelles"]
-    assert source.paragraphs == {
-        "p1": "| Name | Role |\n| --- | --- |\n| Ribosome | Proteins |",
-    }
+    with pytest.raises(UnsupportedFormat):
+        extract(path)
 
 
 @pytest.mark.parametrize("name", ["broken.pdf", "broken.docx"])

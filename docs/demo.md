@@ -60,7 +60,7 @@ If question 3 gets an answer, or a citation does not match its claim, that is a 
 
 ## Trying other formats
 
-The same commands accept PDF, Word, PowerPoint, Excel and photos of notes. A photo needs a
+The same commands accept PDF, Word, PowerPoint and photos of notes. A photo needs a
 model that can see images; see the README for `WIKINOTES_VISION_MODEL`.
 
 ## Undo

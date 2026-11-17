@@ -74,7 +74,6 @@ EXTRACTORS: dict[str, Callable[[Path], str]] = {
     ".pdf": _read_pdf,
     ".docx": _read_office,
     ".pptx": _read_office,
-    ".xlsx": _read_office,
 }
 
 

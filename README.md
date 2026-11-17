@@ -44,6 +44,9 @@ uv sync
 
 4. Open `my-wiki/` in Obsidian or any editor and read your pages.
 
+No notes at hand? Follow the [walkthrough](docs/demo.md) with the example notes in
+[`examples/`](examples/README.md).
+
 | Optional variable | Meaning |
 |---|---|
 | `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Your provider's price in USD per million tokens, so costs are reported |
@@ -123,6 +126,9 @@ links and the graph work, and a citation takes you to the exact source paragraph
 ## Contributing
 
 Contributions of any size are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
+
+wikinotes has no graphical interface yet. If you design or build interfaces, read
+[Designing an interface for wikinotes](docs/interface.md).
 
 ## License
 

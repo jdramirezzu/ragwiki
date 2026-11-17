@@ -46,6 +46,9 @@ uv sync
 
 4. Abre `mi-wiki/` en Obsidian o en cualquier editor y lee tus páginas.
 
+¿No tienes apuntes a mano? Sigue el [paso a paso](docs/demo.md) (en inglés) con las notas de
+ejemplo de [`examples/`](examples/README.md).
+
 | Variable opcional | Significado |
 |---|---|
 | `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Precio de tu proveedor en USD por millón de tokens, para reportar el costo |
@@ -130,6 +133,9 @@ editor: los enlaces y el grafo funcionan, y una cita te lleva al párrafo exacto
 ## Contribuir
 
 Toda contribución es bienvenida. Empieza por [CONTRIBUTING.md](CONTRIBUTING.md).
+
+wikinotes aún no tiene interfaz gráfica. Si diseñas o construyes interfaces, lee
+[Designing an interface for wikinotes](docs/interface.md) (en inglés).
 
 ## Licencia
 

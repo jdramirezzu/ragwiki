@@ -1,5 +1,6 @@
 from conftest import ScriptedModel
-from test_ingest import CELLS, PART_1, PART_2, PLAN, SMALL_WINDOW, WRITE
+from files import PNG
+from test_ingest import CELLS, PART_1, PART_2, PLAN, SMALL_WINDOW, TRANSCRIPTION, WRITE
 from typer.testing import CliRunner
 
 from wikinotes import __version__
@@ -169,6 +170,22 @@ def test_add_rejects_a_context_window_that_is_not_a_positive_number(tmp_path, mo
     assert result.exit_code == 1
     assert "WIKINOTES_CONTEXT_TOKENS" in result.output
     assert not list((vault / "wiki").iterdir())
+
+
+def test_add_transcribes_a_photo_and_says_so(tmp_path, monkeypatch):
+    vault, _ = make_vault_with_note(tmp_path)
+    photo = tmp_path / "board.png"
+    photo.write_bytes(PNG)
+    monkeypatch.setattr(
+        "wikinotes.cli.build_model", lambda _: ScriptedModel(TRANSCRIPTION, PLAN, WRITE)
+    )
+
+    result = runner.invoke(app, ["add", str(photo), "--vault", str(vault)])
+
+    assert result.exit_code == 0
+    assert "Estimate: 1 file(s), about 3 model call(s)" in result.output
+    assert "board.png: transcribing the photo" in result.output
+    assert "added as src-cell-biology" in result.output
 
 
 def test_add_reports_a_damaged_document_and_changes_nothing(tmp_path, monkeypatch):

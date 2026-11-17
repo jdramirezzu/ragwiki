@@ -16,9 +16,11 @@ class ScriptedModel:
     def __init__(self, *replies):
         self.replies = [r if isinstance(r, str) else json.dumps(r) for r in replies]
         self.calls: list[tuple[str, str]] = []
+        self.images: list[tuple] = []
 
-    def complete(self, system: str, user: str) -> Reply:
+    def complete(self, system: str, user: str, images=()) -> Reply:
         self.calls.append((system, user))
+        self.images.append(tuple(images))
         if not self.replies:
             raise AssertionError("The scripted model ran out of replies")
         return Reply(text=self.replies.pop(0), input_tokens=1000, output_tokens=500)

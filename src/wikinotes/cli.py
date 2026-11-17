@@ -65,7 +65,9 @@ def _print_cost(model: Model) -> None:
 
 
 def _print_progress(progress: Progress) -> None:
-    if progress.parts > 1:
+    if progress.stage == "transcribing":
+        typer.echo(f"{progress.file}: transcribing the photo")
+    elif progress.parts > 1:
         typer.echo(f"{progress.file}: part {progress.part} of {progress.parts}, {progress.stage}")
 
 

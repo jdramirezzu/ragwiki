@@ -17,3 +17,6 @@ odd/
 
 # Local agent tooling
 .atl/
+
+# Private study material used for local testing only: never publish
+demo/

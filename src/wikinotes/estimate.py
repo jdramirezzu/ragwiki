@@ -8,9 +8,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from wikinotes.extract import extract, file_hash
+from wikinotes.extract import extract, file_hash, is_photo
 from wikinotes.ingest import MAX_UPDATES, PART_SHARE, SYSTEM, render_source, split_source
 from wikinotes.models import DEFAULT_CONTEXT_TOKENS, estimate_tokens
+from wikinotes.photos import SYSTEM as PHOTO_SYSTEM
 from wikinotes.vault import Vault
 
 # Instructions and JSON template around the source in each prompt.
@@ -21,6 +22,10 @@ PLAN_REPLY = 400
 WRITE_REPLY_BASE = 300
 WRITE_REPLY_RATIO = 1.5
 WRITE_REPLY_MAX = 4_000
+# A photo cannot be measured without paying for its transcription, so a page of notes is
+# assumed: what the image costs to read and how much text comes out of it.
+PHOTO_INPUT = 1_500
+PHOTO_TEXT = 800
 
 
 @dataclass(frozen=True)
@@ -66,10 +71,19 @@ def estimate_ingest(
         if file_hash(path) in known:
             continue
         files += 1
-        source = extract(path)
-        parts = split_source(source, max(1, context_tokens // PART_SHARE))
-        for number, blocks in enumerate(parts, start=1):
-            part = estimate_tokens(render_source(source, blocks, number, len(parts)))
+        if is_photo(path):
+            calls += 1
+            input_tokens += estimate_tokens(PHOTO_SYSTEM) + PHOTO_INPUT
+            output_tokens += PHOTO_TEXT
+            sizes = [PHOTO_TEXT]
+        else:
+            source = extract(path)
+            parts = split_source(source, max(1, context_tokens // PART_SHARE))
+            sizes = [
+                estimate_tokens(render_source(source, blocks, number, len(parts)))
+                for number, blocks in enumerate(parts, start=1)
+            ]
+        for part in sizes:
             calls += 2
             input_tokens += (fixed + part + index) + (fixed + part + pages)
             reply = WRITE_REPLY_BASE + int(part * WRITE_REPLY_RATIO)

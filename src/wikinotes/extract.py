@@ -69,6 +69,19 @@ EXTRACTORS: dict[str, Callable[[Path], str]] = {
 }
 
 
+# Photos of notes. They carry no text, so a model has to transcribe them.
+IMAGE_TYPES: dict[str, str] = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+}
+
+
+def is_photo(path: Path) -> bool:
+    return Path(path).suffix.lower() in IMAGE_TYPES
+
+
 def file_hash(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -109,11 +122,19 @@ def source_from_markdown(path: Path, markdown: str) -> Source:
     )
 
 
-def extract(path: Path) -> Source:
+def extract(path: Path, read_image: Callable[[Path], str] | None = None) -> Source:
+    """Read a file into a Source. `read_image` transcribes a photo into Markdown."""
     path = Path(path)
+    if is_photo(path):
+        if read_image is None:
+            raise UnreadableSource(
+                f"{path.name} is a photo: it needs a model to be transcribed. Add it with "
+                "`wikinotes add`."
+            )
+        return source_from_markdown(path, read_image(path))
     extractor = EXTRACTORS.get(path.suffix.lower())
     if extractor is None:
-        supported = ", ".join(sorted(EXTRACTORS))
+        supported = ", ".join(sorted({*EXTRACTORS, *IMAGE_TYPES}))
         raise UnsupportedFormat(
             f"Cannot read '{path.suffix}' files yet ({path.name}). Supported: {supported}"
         )

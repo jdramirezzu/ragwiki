@@ -2,10 +2,12 @@ import subprocess
 
 import pytest
 from conftest import ScriptedModel
+from files import PNG
 
 from wikinotes.domain import Source
 from wikinotes.extract import number_blocks
 from wikinotes.ingest import IngestError, ingest, split_source
+from wikinotes.models import Image
 
 CELLS = "# Cell biology\n\nThe cell is the unit of life.\n\nMitochondria produce ATP.\n"
 ENERGY = "# Energy\n\nATP stores energy in phosphate bonds.\n"
@@ -253,3 +255,51 @@ def test_a_failure_in_a_later_part_leaves_the_vault_untouched(vault, note):
         ingest(vault, model, note("cells.md", CELLS), context_tokens=SMALL_WINDOW)
 
     assert snapshot(vault) == before
+
+
+TRANSCRIPTION = {
+    "markdown": "# Cell biology\n\nThe cell is the unit of life.\n\nMitochondria produce ATP."
+}
+
+
+def photo(tmp_path, name="board.png"):
+    path = tmp_path / name
+    path.write_bytes(PNG)
+    return path
+
+
+def test_a_photo_is_transcribed_first_and_then_ingested_like_any_source(vault, tmp_path):
+    model = ScriptedModel(TRANSCRIPTION, PLAN, WRITE)
+    progress = []
+
+    result = ingest(vault, model, photo(tmp_path), on_progress=progress.append)
+
+    assert result.source_id == "src-cell-biology"
+    assert result.created == ["cell", "mitochondria"]
+    assert model.images == [(Image("image/png", PNG),), (), ()]
+    assert "[p2] Mitochondria produce ATP." in model.calls[1][1]
+    assert vault.load_source("src-cell-biology").paragraphs["p2"] == "Mitochondria produce ATP."
+    assert (vault.root / "sources" / "src-cell-biology.png").read_bytes() == PNG
+    assert [p.stage for p in progress] == ["transcribing", "planning", "writing"]
+
+
+def test_a_photo_the_model_cannot_transcribe_fails_and_leaves_the_vault_untouched(vault, tmp_path):
+    before = snapshot(vault)
+    model = ScriptedModel({"markdown": ""}, {"text": "no notes here"})
+
+    with pytest.raises(IngestError):
+        ingest(vault, model, photo(tmp_path))
+
+    assert len(model.calls) == 2
+    assert snapshot(vault) == before
+
+
+def test_the_same_photo_is_not_transcribed_twice(vault, tmp_path):
+    path = photo(tmp_path)
+    ingest(vault, ScriptedModel(TRANSCRIPTION, PLAN, WRITE), path)
+    model = ScriptedModel()
+
+    result = ingest(vault, model, path)
+
+    assert result.skipped
+    assert model.calls == []

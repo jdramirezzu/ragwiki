@@ -1,9 +1,11 @@
 """Talking to a language model: the port, the metering wrapper and the OpenAI-compatible adapter."""
 
+import base64
 import json
 import os
 import re
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,8 +31,22 @@ def estimate_tokens(text: str) -> int:
     return (len(text) + 3) // 4
 
 
+@dataclass(frozen=True)
+class Image:
+    """A picture sent to the model with a prompt, such as a photo of handwritten notes."""
+
+    media_type: str
+    data: bytes
+
+
 class Model(Protocol):
-    def complete(self, system: str, user: str) -> Reply: ...
+    """What wikinotes needs from a language model.
+
+    `images` is only passed when a photo has to be transcribed, so a model that never sees
+    photos may implement `complete(system, user)` alone.
+    """
+
+    def complete(self, system: str, user: str, images: Sequence[Image] = ()) -> Reply: ...
 
 
 class ConfigError(Exception):
@@ -68,14 +84,17 @@ class MeteredModel:
         self.calls = 0
         self.spent_usd = 0.0
 
-    def complete(self, system: str, user: str) -> Reply:
+    def complete(self, system: str, user: str, images: Sequence[Image] = ()) -> Reply:
         if self.max_usd is not None and self.spent_usd >= self.max_usd:
             raise BudgetExceeded(
                 f"Spending cap reached: ${self.spent_usd:.4f} of ${self.max_usd:.4f}. "
                 "Raise WIKINOTES_MAX_USD to continue."
             )
         start = time.monotonic()
-        reply = self.inner.complete(system, user)
+        if images:
+            reply = self.inner.complete(system, user, images=images)
+        else:
+            reply = self.inner.complete(system, user)
         usd = (
             reply.input_tokens * self.price_input + reply.output_tokens * self.price_output
         ) / 1_000_000
@@ -97,26 +116,63 @@ class MeteredModel:
 class OpenAICompatibleModel:
     """Any endpoint that speaks the OpenAI chat API: hosted providers or a local server."""
 
-    def __init__(self, model: str, base_url: str | None = None, api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        model: str,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        vision_model: str | None = None,
+        vision_base_url: str | None = None,
+        vision_api_key: str | None = None,
+    ) -> None:
+        """Requests with photos go to the vision model, which defaults to the text model.
+
+        Many text models cannot see images, so the vision model may be a different one and
+        may even live at another provider.
+        """
         from openai import OpenAI
 
         self.model = model
+        self.vision_model = vision_model or model
         # Local servers ignore the key, but the SDK refuses to start without one.
         self.client = OpenAI(base_url=base_url, api_key=api_key or "not-needed")
+        self.vision_client = (
+            OpenAI(
+                base_url=vision_base_url or base_url,
+                api_key=vision_api_key or api_key or "not-needed",
+            )
+            if vision_base_url or vision_api_key
+            else self.client
+        )
 
-    def complete(self, system: str, user: str) -> Reply:
+    def complete(self, system: str, user: str, images: Sequence[Image] = ()) -> Reply:
         from openai import OpenAIError
 
+        content: str | list[dict] = user
+        if images:
+            content = [{"type": "text", "text": user}]
+            for image in images:
+                encoded = base64.b64encode(image.data).decode("ascii")
+                url = f"data:{image.media_type};base64,{encoded}"
+                content.append({"type": "image_url", "image_url": {"url": url}})
+        client = self.vision_client if images else self.client
+        name = self.vision_model if images else self.model
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
+            response = client.chat.completions.create(
+                model=name,
                 messages=[
                     {"role": "system", "content": system},
-                    {"role": "user", "content": user},
+                    {"role": "user", "content": content},
                 ],
             )
         except OpenAIError as error:
-            raise ModelError(f"The model request failed: {error}") from error
+            hint = (
+                f" Photos need a model that can see images; '{name}' may not. "
+                "Set WIKINOTES_VISION_MODEL to one that can."
+                if images
+                else ""
+            )
+            raise ModelError(f"The model request failed: {error}.{hint}") from error
         usage = response.usage
         return Reply(
             text=response.choices[0].message.content or "",
@@ -156,6 +212,9 @@ def model_from_env() -> OpenAICompatibleModel:
         model=name,
         base_url=os.environ.get("WIKINOTES_BASE_URL") or None,
         api_key=os.environ.get("WIKINOTES_API_KEY") or None,
+        vision_model=os.environ.get("WIKINOTES_VISION_MODEL") or None,
+        vision_base_url=os.environ.get("WIKINOTES_VISION_BASE_URL") or None,
+        vision_api_key=os.environ.get("WIKINOTES_VISION_API_KEY") or None,
     )
 
 

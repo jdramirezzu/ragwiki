@@ -1,4 +1,5 @@
 from conftest import ScriptedModel
+from files import PNG
 from test_ingest import CELLS, ENERGY, PLAN, SMALL_WINDOW, WRITE
 
 from wikinotes.estimate import estimate_ingest
@@ -46,3 +47,12 @@ def test_estimating_never_changes_the_vault(vault, note):
     estimate_ingest(vault, [note("cells.md", CELLS)])
 
     assert sorted(str(p) for p in vault.root.rglob("*") if ".git" not in p.parts) == before
+
+
+def test_a_photo_adds_a_transcription_call(vault, tmp_path):
+    path = tmp_path / "board.png"
+    path.write_bytes(PNG)
+
+    estimate = estimate_ingest(vault, [path])
+
+    assert (estimate.files, estimate.calls) == (1, 3)

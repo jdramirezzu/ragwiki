@@ -49,10 +49,17 @@ uv sync
 | `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Your provider's price in USD per million tokens, so costs are reported |
 | `WIKINOTES_MAX_USD` | Spending cap for one command |
 | `WIKINOTES_VAULT` | Vault folder, when you are not inside it |
+| `WIKINOTES_VISION_MODEL` | Model used for photos, when the main one cannot see images |
+| `WIKINOTES_VISION_BASE_URL`, `WIKINOTES_VISION_API_KEY` | Only when the vision model is at another provider |
 | `WIKINOTES_CONTEXT_TOKENS` | Your model's context window in tokens (default 32000). Lower it for small local models |
 
 Today wikinotes reads Markdown and text (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
-PowerPoint (`.pptx`) and Excel (`.xlsx`). A PDF needs a text layer; scans are not read yet.
+PowerPoint (`.pptx`), Excel (`.xlsx`) and photos of notes (`.png`, `.jpg`, `.jpeg`, `.webp`).
+
+A photo is transcribed by a model that can see images. The transcription is saved in
+`extracted/` next to your original photo, so you can check it. If your text model cannot
+see images, set `WIKINOTES_VISION_MODEL` to one that can. A PDF needs a text layer: for a
+scan, add its pages as photos.
 
 Before any model call, `add` prints an estimate of the calls, tokens and price. When the
 price is above zero it asks you to confirm; `--yes` skips the question and `--estimate`
@@ -109,7 +116,7 @@ links and the graph work, and a citation takes you to the exact source paragraph
 |---|---|---|
 | M0 | Repository, packaging, CI | Done |
 | M1 | Vault, Markdown ingestion, questions with verified citations | Done |
-| M2 | PDF, office files, photos of handwritten notes | Planned |
+| M2 | PDF, office files, photos of handwritten notes, long sources, cost estimate | Done |
 | M3 | Source-text search fallback, `lint`, saving answers as pages | Planned |
 | Later | Graphical interface, flashcards, shared wikis | Ideas welcome |
 

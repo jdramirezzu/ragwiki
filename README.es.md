@@ -51,11 +51,17 @@ uv sync
 | `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Precio de tu proveedor en USD por millón de tokens, para reportar el costo |
 | `WIKINOTES_MAX_USD` | Tope de gasto de un comando |
 | `WIKINOTES_VAULT` | Carpeta de la wiki, cuando no estás dentro de ella |
+| `WIKINOTES_VISION_MODEL` | Modelo para las fotos, cuando el principal no ve imágenes |
+| `WIKINOTES_VISION_BASE_URL`, `WIKINOTES_VISION_API_KEY` | Solo si el modelo de visión está en otro proveedor |
 | `WIKINOTES_CONTEXT_TOKENS` | Ventana de contexto de tu modelo en tokens (32000 por defecto). Bájala para modelos locales pequeños |
 
 Hoy wikinotes lee Markdown y texto (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
-PowerPoint (`.pptx`) y Excel (`.xlsx`). Un PDF necesita una capa de texto; los escaneos aún
-no se leen.
+PowerPoint (`.pptx`), Excel (`.xlsx`) y fotos de apuntes (`.png`, `.jpg`, `.jpeg`, `.webp`).
+
+Una foto la transcribe un modelo que pueda ver imágenes. La transcripción se guarda en
+`extracted/` junto a tu foto original, para que puedas revisarla. Si tu modelo de texto no
+ve imágenes, define `WIKINOTES_VISION_MODEL` con uno que sí. Un PDF necesita una capa de
+texto: si es un escaneo, agrega sus páginas como fotos.
 
 Antes de llamar al modelo, `add` muestra una estimación de llamadas, tokens y precio.
 Cuando el precio es mayor que cero te pide confirmar; `--yes` omite la pregunta y
@@ -117,7 +123,7 @@ editor: los enlaces y el grafo funcionan, y una cita te lleva al párrafo exacto
 |---|---|---|
 | M0 | Repositorio, empaquetado, CI | Hecho |
 | M1 | Carpeta, ingesta de Markdown, preguntas con citas verificadas | Hecho |
-| M2 | PDF, archivos de ofimática, fotos de apuntes a mano | Planeado |
+| M2 | PDF, archivos de ofimática, fotos de apuntes a mano, fuentes largas, estimación de costo | Hecho |
 | M3 | Respaldo de búsqueda en el texto original, `lint`, guardar respuestas como páginas | Planeado |
 | Después | Interfaz gráfica, tarjetas de estudio, wikis compartidas | Se reciben ideas |
 

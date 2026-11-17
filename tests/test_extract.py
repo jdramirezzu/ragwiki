@@ -1,5 +1,5 @@
 import pytest
-from files import make_docx, make_pdf, make_pptx, make_xlsx
+from files import PNG, make_docx, make_pdf, make_pptx, make_xlsx
 
 from wikinotes.extract import UnreadableSource, UnsupportedFormat, extract
 
@@ -65,6 +65,7 @@ def test_unsupported_format_names_the_supported_ones(tmp_path):
 
     assert ".xyz" in str(error.value)
     assert ".md" in str(error.value)
+    assert ".png" in str(error.value)
 
 
 def test_a_pdf_becomes_numbered_paragraphs_titled_after_the_file(tmp_path):
@@ -134,3 +135,25 @@ def test_a_document_without_text_is_rejected_and_suggests_photos(tmp_path):
 
     assert "scan.pdf" in str(error.value)
     assert "photo" in str(error.value)
+
+
+def test_a_photo_is_transcribed_by_the_reader_it_is_given(tmp_path):
+    path = tmp_path / "board.jpg"
+    path.write_bytes(PNG)
+
+    source = extract(path, read_image=lambda _: "# Cell biology\n\nThe cell is the unit of life.")
+
+    assert source.title == "Cell biology"
+    assert source.original == "board.jpg"
+    assert source.paragraphs == {"p1": "The cell is the unit of life."}
+
+
+def test_a_photo_without_a_reader_says_it_needs_a_model(tmp_path):
+    path = tmp_path / "board.png"
+    path.write_bytes(PNG)
+
+    with pytest.raises(UnreadableSource) as error:
+        extract(path)
+
+    assert "board.png" in str(error.value)
+    assert "model" in str(error.value)

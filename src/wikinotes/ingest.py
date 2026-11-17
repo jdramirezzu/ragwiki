@@ -10,7 +10,7 @@ are held in memory until the last part is valid.
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
@@ -18,7 +18,10 @@ from typing import TypeVar
 
 from wikinotes.domain import Block, Page, Source, slugify
 from wikinotes.extract import extract, file_hash
-from wikinotes.models import DEFAULT_CONTEXT_TOKENS, Model, estimate_tokens, extract_json
+from wikinotes.models import DEFAULT_CONTEXT_TOKENS, Image, Model, estimate_tokens, extract_json
+from wikinotes.photos import PROMPT as PHOTO_PROMPT
+from wikinotes.photos import SYSTEM as PHOTO_SYSTEM
+from wikinotes.photos import load_image, parse_transcription
 from wikinotes.vault import Vault
 
 MAX_UPDATES = 6
@@ -67,7 +70,7 @@ class Progress:
     file: str
     part: int
     parts: int
-    stage: str  # "planning" or "writing"
+    stage: str  # "transcribing" (photos only), "planning" or "writing"
 
 
 @dataclass
@@ -286,14 +289,26 @@ def _parse_pages(
     return pages, dropped
 
 
-def ask_json(model: Model, system: str, user: str, parse: Callable[[dict], T]) -> T:
+def ask_json(
+    model: Model,
+    system: str,
+    user: str,
+    parse: Callable[[dict], T],
+    images: Sequence[Image] = (),
+) -> T:
     """Ask for JSON and parse it; on a bad reply, ask once more telling the model why."""
+
+    def complete(prompt: str) -> str:
+        if images:
+            return model.complete(system, prompt, images=images).text
+        return model.complete(system, prompt).text
+
     try:
-        return parse(extract_json(model.complete(system, user).text))
+        return parse(extract_json(complete(user)))
     except ValueError as first:
         retry = f"{user}\n\nYour previous reply was rejected: {first}. Reply again, JSON only."
         try:
-            return parse(extract_json(model.complete(system, retry).text))
+            return parse(extract_json(complete(retry)))
         except ValueError as second:
             raise IngestError(f"The model did not return usable output: {second}") from second
 
@@ -316,17 +331,23 @@ def ingest(
     for source_id, entry in vault.sources().items():
         if entry["sha256"] == sha256:
             return IngestResult(source_id=source_id, skipped=True)
-    source = extract(path)
+
+    def report(part: int, parts: int, stage: str) -> None:
+        if on_progress is not None:
+            on_progress(Progress(path.name, part, parts, stage))
+
+    def transcribe(photo: Path) -> str:
+        report(1, 1, "transcribing")
+        image = load_image(photo)
+        return ask_json(model, PHOTO_SYSTEM, PHOTO_PROMPT, parse_transcription, images=(image,))
+
+    source = extract(path, read_image=transcribe)
     source = replace(source, id=vault.new_id(source.title))
     system = SYSTEM + vault.schema()
     paragraphs = Paragraphs(vault, extra=source)
     draft = _Draft(vault)
     existing = set(vault.page_slugs())
     dropped = 0
-
-    def report(part: int, parts: int, stage: str) -> None:
-        if on_progress is not None:
-            on_progress(Progress(path.name, part, parts, stage))
 
     parts = split_source(source, max(1, context_tokens // PART_SHARE))
     for number, blocks in enumerate(parts, start=1):

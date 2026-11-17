@@ -2,12 +2,21 @@
 
 import hashlib
 import re
+import textwrap
 import zipfile
 from collections.abc import Callable
 from pathlib import Path
 
 from wikinotes.domain import Block, Source
 from wikinotes.markdown import is_heading, split_blocks, split_frontmatter
+from wikinotes.models import estimate_tokens
+
+# A citable block larger than this is cut into smaller ones. Converters can return a whole
+# spreadsheet or a page without blank lines as one block, which no model could take in and
+# which would make a citation point at far too much text.
+MAX_BLOCK_TOKENS = 500
+_TABLE_RULE = re.compile(r"^\|[\s:|-]+\|$")
+_FENCES = ("```", "~~~")
 
 
 class UnsupportedFormat(Exception):
@@ -86,6 +95,41 @@ def file_hash(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _limit(text: str) -> list[str]:
+    """Cut a block that exceeds MAX_BLOCK_TOKENS between lines; code is left whole.
+
+    Every piece of a table repeats the header, so each one still reads as a table.
+    """
+    if estimate_tokens(text) <= MAX_BLOCK_TOKENS or text.startswith(_FENCES):
+        return [text]
+    lines = text.split("\n")
+    is_table = len(lines) > 2 and lines[0].startswith("|") and _TABLE_RULE.match(lines[1])
+    header = lines[:2] if is_table else []
+    budget = MAX_BLOCK_TOKENS - estimate_tokens("\n".join(header))
+    pieces: list[str] = []
+    current: list[str] = []
+    size = 0
+    for line in lines[len(header) :]:
+        # A line that is too long on its own is cut between words. Table rows are kept.
+        segments = (
+            [line]
+            if is_table
+            else textwrap.wrap(
+                line, width=budget * 3, break_long_words=False, break_on_hyphens=False
+            )
+        )
+        for segment in segments or [line]:
+            cost = estimate_tokens(segment) + 1
+            if current and size + cost > budget:
+                pieces.append("\n".join(header + current))
+                current, size = [], 0
+            current.append(segment)
+            size += cost
+    if current:
+        pieces.append("\n".join(header + current))
+    return pieces
+
+
 def number_blocks(markdown: str) -> tuple[Block, ...]:
     """Give every non-heading block a sequential anchor: p1, p2, ..."""
     blocks: list[Block] = []
@@ -93,9 +137,10 @@ def number_blocks(markdown: str) -> tuple[Block, ...]:
     for text in split_blocks(markdown):
         if is_heading(text):
             blocks.append(Block(text))
-        else:
+            continue
+        for piece in _limit(text):
             count += 1
-            blocks.append(Block(text, f"p{count}"))
+            blocks.append(Block(piece, f"p{count}"))
     return tuple(blocks)
 
 

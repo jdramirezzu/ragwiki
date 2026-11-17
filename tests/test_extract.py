@@ -1,7 +1,14 @@
 import pytest
 from files import PNG, make_docx, make_pdf, make_pptx, make_xlsx
 
-from wikinotes.extract import UnreadableSource, UnsupportedFormat, extract
+from wikinotes.extract import (
+    MAX_BLOCK_TOKENS,
+    UnreadableSource,
+    UnsupportedFormat,
+    extract,
+    number_blocks,
+)
+from wikinotes.models import estimate_tokens
 
 NOTE = """---
 tags: [biology]
@@ -157,3 +164,42 @@ def test_a_photo_without_a_reader_says_it_needs_a_model(tmp_path):
 
     assert "board.png" in str(error.value)
     assert "model" in str(error.value)
+
+
+def test_a_huge_table_is_cut_into_citable_tables_that_repeat_the_header():
+    rows = [f"| organelle {n} | role {n} |" for n in range(200)]
+    table = "\n".join(["| Name | Role |", "| --- | --- |", *rows])
+
+    blocks = number_blocks(table)
+
+    assert len(blocks) > 1
+    assert all(block.anchor for block in blocks)
+    assert all(block.text.startswith("| Name | Role |\n| --- | --- |\n") for block in blocks)
+    assert all(estimate_tokens(block.text) <= MAX_BLOCK_TOKENS for block in blocks)
+    assert [line for block in blocks for line in block.text.split("\n")[2:]] == rows
+
+
+def test_a_huge_paragraph_is_cut_between_lines_without_losing_text():
+    lines = [f"Sentence number {n} of a very long paragraph." for n in range(200)]
+
+    blocks = number_blocks("\n".join(lines))
+
+    assert len(blocks) > 1
+    assert all(estimate_tokens(block.text) <= MAX_BLOCK_TOKENS for block in blocks)
+    assert "\n".join(block.text for block in blocks).split("\n") == lines
+
+
+def test_a_single_endless_line_is_cut_between_words():
+    words = [f"word{n}" for n in range(2000)]
+
+    blocks = number_blocks(" ".join(words))
+
+    assert len(blocks) > 1
+    assert all(estimate_tokens(block.text) <= MAX_BLOCK_TOKENS for block in blocks)
+    assert " ".join(block.text for block in blocks).split() == words
+
+
+def test_long_code_stays_in_one_block():
+    code = "```\n" + "\n".join(f"line_{n} = {n}" for n in range(400)) + "\n```"
+
+    assert [block.text for block in number_blocks(code)] == [code]

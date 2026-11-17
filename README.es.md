@@ -37,7 +37,14 @@ uv sync
    uv run wikinotes status
    ```
 
-3. Abre `mi-wiki/` en Obsidian o en cualquier editor y lee tus páginas.
+3. Haz una pregunta. La respuesta cita los párrafos de donde sale, y avisa cuando tus notas
+   no la cubren:
+
+   ```bash
+   uv run wikinotes ask "¿Qué hacen las mitocondrias?"
+   ```
+
+4. Abre `mi-wiki/` en Obsidian o en cualquier editor y lee tus páginas.
 
 | Variable opcional | Significado |
 |---|---|
@@ -97,7 +104,7 @@ editor: los enlaces y el grafo funcionan, y una cita te lleva al párrafo exacto
 | Entrega | Alcance | Estado |
 |---|---|---|
 | M0 | Repositorio, empaquetado, CI | Hecho |
-| M1 | Carpeta, ingesta de Markdown, preguntas con citas verificadas | En curso |
+| M1 | Carpeta, ingesta de Markdown, preguntas con citas verificadas | Hecho |
 | M2 | PDF, archivos de ofimática, fotos de apuntes a mano | Planeado |
 | M3 | Respaldo de búsqueda en el texto original, `lint`, guardar respuestas como páginas | Planeado |
 | Después | Interfaz gráfica, tarjetas de estudio, wikis compartidas | Se reciben ideas |

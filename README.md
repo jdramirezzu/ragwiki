@@ -35,7 +35,14 @@ uv sync
    uv run wikinotes status
    ```
 
-3. Open `my-wiki/` in Obsidian or any editor and read your pages.
+3. Ask a question. The answer cites the paragraphs it comes from, and says so when your
+   notes do not cover it:
+
+   ```bash
+   uv run wikinotes ask "What do mitochondria do?"
+   ```
+
+4. Open `my-wiki/` in Obsidian or any editor and read your pages.
 
 | Optional variable | Meaning |
 |---|---|
@@ -92,7 +99,7 @@ links and the graph work, and a citation takes you to the exact source paragraph
 | Milestone | Scope | Status |
 |---|---|---|
 | M0 | Repository, packaging, CI | Done |
-| M1 | Vault, Markdown ingestion, questions with verified citations | In progress |
+| M1 | Vault, Markdown ingestion, questions with verified citations | Done |
 | M2 | PDF, office files, photos of handwritten notes | Planned |
 | M3 | Source-text search fallback, `lint`, saving answers as pages | Planned |
 | Later | Graphical interface, flashcards, shared wikis | Ideas welcome |

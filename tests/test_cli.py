@@ -88,6 +88,34 @@ def test_add_rejects_a_format_it_cannot_read(tmp_path, monkeypatch):
     assert ".xyz" in result.output
 
 
+def test_ask_prints_the_answer_and_where_it_comes_from(tmp_path, monkeypatch):
+    vault, note = make_vault_with_note(tmp_path)
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
+    runner.invoke(app, ["add", str(note), "--vault", str(vault)])
+    replies = [
+        {"action": "read", "pages": ["mitochondria"]},
+        {"action": "answer", "found": True, "text": "ATP [[src-cell-biology#^p2]]."},
+    ]
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(*replies))
+
+    result = runner.invoke(app, ["ask", "What produces ATP?", "--vault", str(vault)])
+
+    assert result.exit_code == 0
+    assert "ATP [[src-cell-biology#^p2]]." in result.output
+    assert "src-cell-biology#^p2 (Cell biology): Mitochondria produce ATP." in result.output
+
+
+def test_ask_says_so_when_the_notes_do_not_answer(tmp_path, monkeypatch):
+    vault, _ = make_vault_with_note(tmp_path)
+    reply = {"action": "answer", "found": False, "text": "The wiki is empty."}
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(reply))
+
+    result = runner.invoke(app, ["ask", "Anything?", "--vault", str(vault)])
+
+    assert result.exit_code == 0
+    assert "Not in your notes: The wiki is empty." in result.output
+
+
 def test_status_outside_a_vault_explains_how_to_start(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("WIKINOTES_VAULT", raising=False)

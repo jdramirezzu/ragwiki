@@ -7,6 +7,7 @@ from typing import Annotated
 import typer
 
 from wikinotes import __version__
+from wikinotes.ask import ask as answer_question
 from wikinotes.extract import UnsupportedFormat
 from wikinotes.ingest import IngestError, ingest
 from wikinotes.models import (
@@ -115,6 +116,38 @@ def add(
                 typer.echo(f"  removed {result.dropped_citations} citation(s) that did not resolve")
     finally:
         _print_cost(model)
+
+
+def _describe_citation(vault: Vault, citation: str) -> str:
+    source_id, anchor = citation.split("#^")
+    source = vault.load_source(source_id)
+    excerpt = " ".join(source.paragraphs[anchor].split())
+    if len(excerpt) > 120:
+        excerpt = excerpt[:117] + "..."
+    return f"- {citation} ({source.title}): {excerpt}"
+
+
+@app.command()
+def ask(
+    question: Annotated[str, typer.Argument(help="What you want to know.")],
+    vault: VaultOption = None,
+) -> None:
+    """Answer a question from the wiki, citing the source paragraphs."""
+    opened = _open_vault(vault)
+    model = _open_model(opened)
+    try:
+        answer = answer_question(opened, model, question)
+    except (BudgetExceeded, ModelError) as error:
+        raise _fail(str(error)) from error
+    finally:
+        _print_cost(model)
+    if not answer.found:
+        typer.echo(f"Not in your notes: {answer.text}")
+        return
+    typer.echo(answer.text)
+    typer.echo("\nSources:")
+    for citation in answer.citations:
+        typer.echo(_describe_citation(opened, citation))
 
 
 @app.command()

@@ -16,7 +16,7 @@ wikinotes todavía no está en PyPI. Se instala desde un clon con
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-git clone <url-del-repositorio> && cd wikinotes
+git clone https://github.com/jdramirezzu/wikinotes.git && cd wikinotes
 uv sync
 ```
 
@@ -52,8 +52,10 @@ uv sync
 | `WIKINOTES_MAX_USD` | Tope de gasto de un comando |
 | `WIKINOTES_VAULT` | Carpeta de la wiki, cuando no estás dentro de ella |
 
-Hoy wikinotes lee `.md`, `.markdown` y `.txt`. Una fuente debe caber en la ventana de
-contexto del modelo; dividir documentos largos está planeado.
+Hoy wikinotes lee Markdown y texto (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
+PowerPoint (`.pptx`) y Excel (`.xlsx`). Un PDF necesita una capa de texto; los escaneos aún
+no se leen. Una fuente debe caber en la ventana de contexto del modelo; dividir documentos
+largos está planeado.
 
 ## Por qué una wiki y no solo búsqueda
 

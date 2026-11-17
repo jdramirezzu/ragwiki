@@ -8,7 +8,7 @@ import typer
 
 from wikinotes import __version__
 from wikinotes.ask import ask as answer_question
-from wikinotes.extract import UnsupportedFormat
+from wikinotes.extract import UnreadableSource, UnsupportedFormat
 from wikinotes.ingest import IngestError, ingest
 from wikinotes.models import (
     BudgetExceeded,
@@ -102,7 +102,13 @@ def add(
         for path in files:
             try:
                 result = ingest(opened, model, path)
-            except (UnsupportedFormat, IngestError, BudgetExceeded, ModelError) as error:
+            except (
+                UnsupportedFormat,
+                UnreadableSource,
+                IngestError,
+                BudgetExceeded,
+                ModelError,
+            ) as error:
                 raise _fail(f"{path.name}: {error}") from error
             if result.skipped:
                 typer.echo(f"{path.name}: already in the vault as {result.source_id}")

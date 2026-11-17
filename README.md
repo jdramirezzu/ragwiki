@@ -14,7 +14,7 @@ keep growing. Every claim links back to the paragraph it came from.
 wikinotes is not on PyPI yet. Install it from a clone with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-git clone <repository-url> && cd wikinotes
+git clone https://github.com/jdramirezzu/wikinotes.git && cd wikinotes
 uv sync
 ```
 
@@ -50,8 +50,9 @@ uv sync
 | `WIKINOTES_MAX_USD` | Spending cap for one command |
 | `WIKINOTES_VAULT` | Vault folder, when you are not inside it |
 
-Today wikinotes reads `.md`, `.markdown` and `.txt`. A source must fit in the model's
-context window; splitting long documents is planned.
+Today wikinotes reads Markdown and text (`.md`, `.markdown`, `.txt`), PDF, Word (`.docx`),
+PowerPoint (`.pptx`) and Excel (`.xlsx`). A PDF needs a text layer; scans are not read yet. A source must fit in the model's context
+window; splitting long documents is planned.
 
 ## Why a wiki and not just search
 

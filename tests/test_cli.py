@@ -88,6 +88,19 @@ def test_add_rejects_a_format_it_cannot_read(tmp_path, monkeypatch):
     assert ".xyz" in result.output
 
 
+def test_add_reports_a_damaged_document_and_changes_nothing(tmp_path, monkeypatch):
+    vault, _ = make_vault_with_note(tmp_path)
+    broken = tmp_path / "broken.pdf"
+    broken.write_bytes(b"this is not a real document")
+    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel())
+
+    result = runner.invoke(app, ["add", str(broken), "--vault", str(vault)])
+
+    assert result.exit_code == 1
+    assert "broken.pdf is damaged" in result.output
+    assert not list((vault / "wiki").iterdir())
+
+
 def test_ask_prints_the_answer_and_where_it_comes_from(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
     monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))

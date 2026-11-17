@@ -9,6 +9,43 @@ keep growing. Every claim links back to the paragraph it came from.
 > Status: early development. The commands below are being built in the open; see the
 > [roadmap](#roadmap) for what works today.
 
+## Quick start
+
+wikinotes is not on PyPI yet. Install it from a clone with [uv](https://docs.astral.sh/uv/):
+
+```bash
+git clone <repository-url> && cd wikinotes
+uv sync
+```
+
+1. Point wikinotes at a model. Any OpenAI-compatible endpoint works:
+
+   ```bash
+   export WIKINOTES_MODEL="<model-name>"
+   export WIKINOTES_BASE_URL="<provider-url>"   # for a local Ollama: http://localhost:11434/v1
+   export WIKINOTES_API_KEY="<your-key>"        # not needed for a local model
+   ```
+
+2. Create a vault and add your notes:
+
+   ```bash
+   uv run wikinotes init my-wiki
+   cd my-wiki
+   uv run wikinotes add ~/notes/biology.md
+   uv run wikinotes status
+   ```
+
+3. Open `my-wiki/` in Obsidian or any editor and read your pages.
+
+| Optional variable | Meaning |
+|---|---|
+| `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Your provider's price in USD per million tokens, so costs are reported |
+| `WIKINOTES_MAX_USD` | Spending cap for one command |
+| `WIKINOTES_VAULT` | Vault folder, when you are not inside it |
+
+Today wikinotes reads `.md`, `.markdown` and `.txt`. A source must fit in the model's
+context window; splitting long documents is planned.
+
 ## Why a wiki and not just search
 
 Most "chat with your documents" tools search your files again for every question. wikinotes

@@ -48,14 +48,14 @@ def test_a_source_round_trips_through_the_vault(tmp_path):
     stored = vault.add_source(source, note)
     loaded = vault.load_source(stored.id)
 
-    assert stored.id == "cell-biology"
+    assert stored.id == "src-cell-biology"
     assert loaded.paragraphs == {"p1": "First.", "p2": "- a\n- b", "p3": "Last."}
     assert loaded.title == "Cell biology"
-    assert (vault.root / "sources" / "cell-biology.md").read_text(encoding="utf-8") == (
+    assert (vault.root / "sources" / "src-cell-biology.md").read_text(encoding="utf-8") == (
         note.read_text(encoding="utf-8")
     )
     assert vault.has_hash(source.sha256)
-    assert vault.sources()["cell-biology"]["original"] == "cells.md"
+    assert vault.sources()["src-cell-biology"]["original"] == "cells.md"
 
 
 def test_source_ids_never_collide(tmp_path):
@@ -63,8 +63,8 @@ def test_source_ids_never_collide(tmp_path):
     first = make_note(tmp_path, "a.md", "# Notes\n\nOne.\n")
     second = make_note(tmp_path, "b.md", "# Notes\n\nTwo.\n")
 
-    assert vault.add_source(extract(first), first).id == "notes"
-    assert vault.add_source(extract(second), second).id == "notes-2"
+    assert vault.add_source(extract(first), first).id == "src-notes"
+    assert vault.add_source(extract(second), second).id == "src-notes-2"
 
 
 def test_a_page_round_trips_and_appears_in_the_index(tmp_path):
@@ -74,8 +74,8 @@ def test_a_page_round_trips_and_appears_in_the_index(tmp_path):
         title="Mitochondria",
         type="concept",
         summary="Organelle that produces ATP.",
-        sources=["cell-biology"],
-        body="Mitochondria produce ATP [[cell-biology#^p2]]. See [[cell]].",
+        sources=["src-cell-biology"],
+        body="Mitochondria produce ATP [[src-cell-biology#^p2]]. See [[cell]].",
     )
 
     vault.write_page(page)
@@ -83,7 +83,7 @@ def test_a_page_round_trips_and_appears_in_the_index(tmp_path):
 
     loaded = vault.read_page("mitochondria")
     assert (loaded.title, loaded.type, loaded.summary) == (page.title, page.type, page.summary)
-    assert loaded.sources == ["cell-biology"]
+    assert loaded.sources == ["src-cell-biology"]
     assert loaded.body == page.body
     assert vault.page_slugs() == ["mitochondria"]
     index = (vault.root / "index.md").read_text(encoding="utf-8")

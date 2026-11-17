@@ -79,9 +79,9 @@ class Vault:
         return any(entry["sha256"] == sha256 for entry in self.sources().values())
 
     def new_id(self, title: str) -> str:
-        """A slug not used by any source or page, so links stay unambiguous."""
-        taken = set(self.sources()) | set(self.page_slugs())
-        base = slugify(title)
+        """A source id. The `src-` prefix keeps sources and pages from sharing a link name."""
+        taken = set(self.sources())
+        base = f"src-{slugify(title)}"
         candidate, number = base, 1
         while candidate in taken:
             number += 1

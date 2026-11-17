@@ -10,6 +10,44 @@ del que salió.
 > Estado: desarrollo inicial. Los comandos se están construyendo de forma abierta; la
 > [hoja de ruta](#hoja-de-ruta) indica qué funciona hoy.
 
+## Inicio rápido
+
+wikinotes todavía no está en PyPI. Se instala desde un clon con
+[uv](https://docs.astral.sh/uv/):
+
+```bash
+git clone <url-del-repositorio> && cd wikinotes
+uv sync
+```
+
+1. Indica qué modelo usar. Sirve cualquier servicio compatible con OpenAI:
+
+   ```bash
+   export WIKINOTES_MODEL="<nombre-del-modelo>"
+   export WIKINOTES_BASE_URL="<url-del-proveedor>"   # Ollama local: http://localhost:11434/v1
+   export WIKINOTES_API_KEY="<tu-clave>"             # no hace falta con un modelo local
+   ```
+
+2. Crea una carpeta y agrega tus notas:
+
+   ```bash
+   uv run wikinotes init mi-wiki
+   cd mi-wiki
+   uv run wikinotes add ~/notas/biologia.md
+   uv run wikinotes status
+   ```
+
+3. Abre `mi-wiki/` en Obsidian o en cualquier editor y lee tus páginas.
+
+| Variable opcional | Significado |
+|---|---|
+| `WIKINOTES_PRICE_INPUT`, `WIKINOTES_PRICE_OUTPUT` | Precio de tu proveedor en USD por millón de tokens, para reportar el costo |
+| `WIKINOTES_MAX_USD` | Tope de gasto de un comando |
+| `WIKINOTES_VAULT` | Carpeta de la wiki, cuando no estás dentro de ella |
+
+Hoy wikinotes lee `.md`, `.markdown` y `.txt`. Una fuente debe caber en la ventana de
+contexto del modelo; dividir documentos largos está planeado.
+
 ## Por qué una wiki y no solo búsqueda
 
 La mayoría de las herramientas para "conversar con tus documentos" vuelven a buscar en tus

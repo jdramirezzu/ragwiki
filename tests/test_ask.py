@@ -2,9 +2,9 @@ import pytest
 from conftest import ScriptedModel
 from test_ingest import CELLS, PLAN, WRITE
 
-from wikinotes.ask import MAX_STEPS, ask
-from wikinotes.ingest import ingest
-from wikinotes.search import rank
+from ragwiki.ask import MAX_STEPS, ask
+from ragwiki.ingest import ingest
+from ragwiki.search import rank
 
 SEARCH = {"action": "search", "query": "what produces ATP"}
 READ = {"action": "read", "pages": ["mitochondria"]}

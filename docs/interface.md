@@ -1,6 +1,6 @@
-# Designing an interface for wikinotes
+# Designing an interface for ragwiki
 
-wikinotes works from the command line and from the lab (`wikinotes lab`), a local web page
+ragwiki works from the command line and from the lab (`ragwiki lab`), a local web page
 that compares the wiki and RAG on a person's files. This guide is for whoever designs and
 builds the next interfaces: it says what the product already does, what the interface
 must make visible, and which decisions are still open. It does not prescribe how anything
@@ -9,7 +9,7 @@ should look.
 ## The short version
 
 - The interface is a new front for the same library. Everything it needs comes from
-  `import wikinotes`; the command line uses nothing else.
+  `import ragwiki`; the command line uses nothing else.
 - Five moments need a design: set up, add material, read the wiki, ask, review.
 - Four promises must stay visible in any design: traceable, honest, costs shown first,
   nothing half-written.
@@ -32,29 +32,29 @@ should look.
 | Add material | Drops files or photos | `estimate_ingest`, then `ingest` with `on_progress` | Estimate, confirm, waiting, long source in parts, photo being transcribed, damaged file, scan without text, already added, failed with nothing changed |
 | Read the wiki | Browses pages and follows links | `Vault.page_slugs`, `Vault.read_page`, `Vault.index` | Empty wiki, page with many sources, link to a page that does not exist yet |
 | Ask | Types a question | `ask`, then `cited_paragraph` for each citation | Thinking, answer with citations, partial answer, not in your notes, spending cap reached |
-| Review | Checks what changed and what it cost | `log.md`, `.wikinotes/calls.jsonl`, the vault's Git history | First use with no history, a transcription that needs correcting |
+| Review | Checks what changed and what it cost | `log.md`, `.ragwiki/calls.jsonl`, the vault's Git history | First use with no history, a transcription that needs correcting |
 
 ## Using the library
 
 ```python
 from pathlib import Path
 
-import wikinotes
+import ragwiki
 
-vault = wikinotes.Vault.find(Path.home() / "my-wiki")  # or Vault.create(folder)
-model = wikinotes.metered_from_env(vault.root / ".wikinotes" / "calls.jsonl")
+vault = ragwiki.Vault.find(Path.home() / "my-wiki")  # or Vault.create(folder)
+model = ragwiki.metered_from_env(vault.root / ".ragwiki" / "calls.jsonl")
 
-estimate = wikinotes.estimate_ingest(vault, [path])  # no model call, safe to run anytime
+estimate = ragwiki.estimate_ingest(vault, [path])  # no model call, safe to run anytime
 # estimate.calls, estimate.input_tokens, estimate.output_tokens, estimate.usd (None = unknown)
 
-result = wikinotes.ingest(vault, model, path, on_progress=show)
+result = ragwiki.ingest(vault, model, path, on_progress=show)
 # show receives Progress(file, part, parts, stage); stage is "transcribing", "planning"
 # or "writing". result.created, result.updated, result.dropped_citations, result.skipped
 
-answer = wikinotes.ask(vault, model, "What do mitochondria do?")
+answer = ragwiki.ask(vault, model, "What do mitochondria do?")
 # answer.found, answer.text (Markdown), answer.citations, answer.pages_read
 for citation in answer.citations:
-    paragraph = wikinotes.cited_paragraph(vault, citation)
+    paragraph = ragwiki.cited_paragraph(vault, citation)
     # paragraph.source_title, paragraph.anchor, paragraph.text
 ```
 
@@ -70,7 +70,7 @@ sentence written for the person, not for a developer.
 | `extracted/<source-id>.md` | A source as Markdown. Each citable paragraph ends with `^p1`, `^p2`, ... | Showing the cited paragraph in context |
 | `sources/` | The original files, untouched | Showing a photo beside its transcription |
 | `index.md`, `log.md` | Catalog of pages and history of additions | Home screen, activity |
-| `.wikinotes/calls.jsonl` | One line per model call: time, seconds, tokens, price | A running cost total |
+| `.ragwiki/calls.jsonl` | One line per model call: time, seconds, tokens, price | A running cost total |
 
 A citation is written `[[src-cell-biology#^p2]]` and a link to a page `[[mitochondria]]`.
 Both are Obsidian syntax, so the folder already opens there with a working graph.
@@ -79,7 +79,7 @@ Both are Obsidian syntax, so the folder already opens there with a working graph
 
 | Option | Why consider it | What it costs |
 |---|---|---|
-| Local web app: a small Python server over the library and a browser front | Any design stack works, runs on every system, nothing to install beyond wikinotes. A good first step | Needs a thin HTTP layer that does not exist yet |
+| Local web app: a small Python server over the library and a browser front | Any design stack works, runs on every system, nothing to install beyond ragwiki. A good first step | Needs a thin HTTP layer that does not exist yet |
 | Obsidian plugin | People who keep notes are often already there, and reading and linking are solved | Plugins are TypeScript, so the Python library must run beside it |
 | Desktop app | Feels like a product, works by double click | Packaging and updates for three systems. Easier once the web app exists |
 

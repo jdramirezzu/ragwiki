@@ -9,10 +9,10 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from wikinotes.ingest import clean_body
-from wikinotes.models import Model, extract_json
-from wikinotes.search import rank
-from wikinotes.vault import Vault
+from ragwiki.ingest import clean_body
+from ragwiki.models import Model, extract_json
+from ragwiki.search import rank
+from ragwiki.vault import Vault
 
 MAX_STEPS = 8
 MAX_READ = 3

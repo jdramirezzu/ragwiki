@@ -40,7 +40,7 @@ class Image:
 
 
 class Model(Protocol):
-    """What wikinotes needs from a language model.
+    """What ragwiki needs from a language model.
 
     `images` is only passed when a photo has to be transcribed, so a model that never sees
     photos may implement `complete(system, user)` alone.
@@ -88,7 +88,7 @@ class MeteredModel:
         if self.max_usd is not None and self.spent_usd >= self.max_usd:
             raise BudgetExceeded(
                 f"Spending cap reached: ${self.spent_usd:.4f} of ${self.max_usd:.4f}. "
-                "Raise WIKINOTES_MAX_USD to continue."
+                "Raise RAGWIKI_MAX_USD to continue."
             )
         start = time.monotonic()
         if images:
@@ -168,7 +168,7 @@ class OpenAICompatibleModel:
         except OpenAIError as error:
             hint = (
                 f" Photos need a model that can see images; '{name}' may not. "
-                "Set WIKINOTES_VISION_MODEL to one that can."
+                "Set RAGWIKI_VISION_MODEL to one that can."
                 if images
                 else ""
             )
@@ -193,36 +193,36 @@ def _env_float(name: str) -> float | None:
 
 def context_tokens_from_env() -> int:
     """The model's context window, which decides when a long source is split into parts."""
-    value = _env_float("WIKINOTES_CONTEXT_TOKENS")
+    value = _env_float("RAGWIKI_CONTEXT_TOKENS")
     if value is None:
         return DEFAULT_CONTEXT_TOKENS
     if value < 1:
-        raise ConfigError(f"WIKINOTES_CONTEXT_TOKENS must be a positive number, got '{value:g}'")
+        raise ConfigError(f"RAGWIKI_CONTEXT_TOKENS must be a positive number, got '{value:g}'")
     return int(value)
 
 
 def model_from_env() -> OpenAICompatibleModel:
-    name = os.environ.get("WIKINOTES_MODEL")
+    name = os.environ.get("RAGWIKI_MODEL")
     if not name:
         raise ConfigError(
-            "No model configured. Set WIKINOTES_MODEL (and WIKINOTES_BASE_URL and "
-            "WIKINOTES_API_KEY for your provider). See the README for examples."
+            "No model configured. Set RAGWIKI_MODEL (and RAGWIKI_BASE_URL and "
+            "RAGWIKI_API_KEY for your provider). See the README for examples."
         )
     return OpenAICompatibleModel(
         model=name,
-        base_url=os.environ.get("WIKINOTES_BASE_URL") or None,
-        api_key=os.environ.get("WIKINOTES_API_KEY") or None,
-        vision_model=os.environ.get("WIKINOTES_VISION_MODEL") or None,
-        vision_base_url=os.environ.get("WIKINOTES_VISION_BASE_URL") or None,
-        vision_api_key=os.environ.get("WIKINOTES_VISION_API_KEY") or None,
+        base_url=os.environ.get("RAGWIKI_BASE_URL") or None,
+        api_key=os.environ.get("RAGWIKI_API_KEY") or None,
+        vision_model=os.environ.get("RAGWIKI_VISION_MODEL") or None,
+        vision_base_url=os.environ.get("RAGWIKI_VISION_BASE_URL") or None,
+        vision_api_key=os.environ.get("RAGWIKI_VISION_API_KEY") or None,
     )
 
 
 def prices_from_env() -> tuple[float, float]:
     """Input and output price in USD per million tokens; zero when not configured."""
     return (
-        _env_float("WIKINOTES_PRICE_INPUT") or 0.0,
-        _env_float("WIKINOTES_PRICE_OUTPUT") or 0.0,
+        _env_float("RAGWIKI_PRICE_INPUT") or 0.0,
+        _env_float("RAGWIKI_PRICE_OUTPUT") or 0.0,
     )
 
 
@@ -233,7 +233,7 @@ def metered_from_env(log_path: Path) -> MeteredModel:
         log_path,
         price_input=price_input,
         price_output=price_output,
-        max_usd=_env_float("WIKINOTES_MAX_USD"),
+        max_usd=_env_float("RAGWIKI_MAX_USD"),
     )
 
 

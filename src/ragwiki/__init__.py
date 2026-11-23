@@ -1,18 +1,18 @@
-"""wikinotes: an interlinked, LLM-maintained Markdown wiki built from your own material.
+"""ragwiki: an interlinked, LLM-maintained Markdown wiki built from your own material.
 
 Everything an application needs is importable from here. The command line in
-`wikinotes.cli` is one such application and uses nothing else.
+`ragwiki.cli` is one such application and uses nothing else.
 """
 
 __version__ = "0.1.0"
 
-from wikinotes.ask import Answer, CitedParagraph, ask, cited_paragraph
-from wikinotes.compare import Comparison, Recommendation, compare, recommend, summarize
-from wikinotes.domain import Block, Page, Source
-from wikinotes.estimate import Estimate, estimate_ingest
-from wikinotes.extract import UnreadableSource, UnsupportedFormat
-from wikinotes.ingest import IngestError, IngestResult, Progress, ingest
-from wikinotes.models import (
+from ragwiki.ask import Answer, CitedParagraph, ask, cited_paragraph
+from ragwiki.compare import Comparison, Recommendation, compare, recommend, summarize
+from ragwiki.domain import Block, Page, Source
+from ragwiki.estimate import Estimate, estimate_ingest
+from ragwiki.extract import UnreadableSource, UnsupportedFormat
+from ragwiki.ingest import IngestError, IngestResult, Progress, ingest
+from ragwiki.models import (
     BudgetExceeded,
     ConfigError,
     Image,
@@ -23,8 +23,8 @@ from wikinotes.models import (
     Reply,
     metered_from_env,
 )
-from wikinotes.rag import RagAnswer, ask_rag
-from wikinotes.vault import Vault, VaultError
+from ragwiki.rag import RagAnswer, ask_rag
+from ragwiki.vault import Vault, VaultError
 
 __all__ = [
     "summarize",

@@ -17,10 +17,10 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from wikinotes.ask import ask
-from wikinotes.models import Image, Model, Reply
-from wikinotes.rag import DEFAULT_K, Embedder, ask_rag
-from wikinotes.vault import STATE_DIR, Vault
+from ragwiki.ask import ask
+from ragwiki.models import Image, Model, Reply
+from ragwiki.rag import DEFAULT_K, Embedder, ask_rag
+from ragwiki.vault import STATE_DIR, Vault
 
 ARMS = ("wiki", "rag")
 VERDICTS = ("wiki", "rag", "tie", "neither")
@@ -369,7 +369,7 @@ def _ratio(wiki: float | None, rag: float | None) -> str | None:
 def recommend(summary: Summary, k: int | None = None) -> Recommendation:
     """Which architecture suits this corpus, from the person's own evidence.
 
-    The rule follows the study behind wikinotes: the wiki is worth its higher cost only
+    The rule follows the study behind ragwiki: the wiki is worth its higher cost only
     when it answers clearly better (a gap of at least 0.10); with similar quality the
     cheaper retrieval wins. It needs five evaluated questions before deciding.
     """

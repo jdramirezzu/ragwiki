@@ -8,11 +8,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from wikinotes.extract import extract, file_hash, is_photo
-from wikinotes.ingest import MAX_UPDATES, PART_SHARE, SYSTEM, render_source, split_source
-from wikinotes.models import DEFAULT_CONTEXT_TOKENS, estimate_tokens
-from wikinotes.photos import SYSTEM as PHOTO_SYSTEM
-from wikinotes.vault import Vault
+from ragwiki.extract import extract, file_hash, is_photo
+from ragwiki.ingest import MAX_UPDATES, PART_SHARE, SYSTEM, render_source, split_source
+from ragwiki.models import DEFAULT_CONTEXT_TOKENS, estimate_tokens
+from ragwiki.photos import SYSTEM as PHOTO_SYSTEM
+from ragwiki.vault import Vault
 
 # Instructions and JSON template around the source in each prompt.
 PROMPT_OVERHEAD = 200

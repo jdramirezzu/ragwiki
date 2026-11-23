@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 from conftest import ScriptedModel
 
-from wikinotes.models import (
+from ragwiki.models import (
     BudgetExceeded,
     ConfigError,
     Image,
@@ -45,12 +45,12 @@ def test_the_spending_cap_stops_further_calls(tmp_path):
 
 
 def test_model_from_env_names_the_missing_variable(monkeypatch):
-    monkeypatch.delenv("WIKINOTES_MODEL", raising=False)
+    monkeypatch.delenv("RAGWIKI_MODEL", raising=False)
 
     with pytest.raises(ConfigError) as error:
         model_from_env()
 
-    assert "WIKINOTES_MODEL" in str(error.value)
+    assert "RAGWIKI_MODEL" in str(error.value)
 
 
 def test_extract_json_accepts_fenced_replies_and_rejects_prose():

@@ -2,8 +2,8 @@ from conftest import ScriptedModel
 from files import PNG
 from test_ingest import CELLS, ENERGY, PLAN, SMALL_WINDOW, WRITE
 
-from wikinotes.estimate import estimate_ingest
-from wikinotes.ingest import ingest
+from ragwiki.estimate import estimate_ingest
+from ragwiki.ingest import ingest
 
 
 def test_a_new_note_is_forecast_as_one_plan_call_and_one_write_call(vault, note):

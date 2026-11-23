@@ -16,13 +16,13 @@ from datetime import date
 from pathlib import Path
 from typing import TypeVar
 
-from wikinotes.domain import Block, Page, Source, slugify
-from wikinotes.extract import extract, file_hash, is_photo
-from wikinotes.models import DEFAULT_CONTEXT_TOKENS, Image, Model, estimate_tokens, extract_json
-from wikinotes.photos import PROMPT as PHOTO_PROMPT
-from wikinotes.photos import SYSTEM as PHOTO_SYSTEM
-from wikinotes.photos import load_image, parse_transcription
-from wikinotes.vault import Vault
+from ragwiki.domain import Block, Page, Source, slugify
+from ragwiki.extract import extract, file_hash, is_photo
+from ragwiki.models import DEFAULT_CONTEXT_TOKENS, Image, Model, estimate_tokens, extract_json
+from ragwiki.photos import PROMPT as PHOTO_PROMPT
+from ragwiki.photos import SYSTEM as PHOTO_SYSTEM
+from ragwiki.photos import load_image, parse_transcription
+from ragwiki.vault import Vault
 
 MAX_UPDATES = 6
 MAX_CREATES = 4

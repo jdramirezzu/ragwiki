@@ -2,10 +2,10 @@ import pytest
 from conftest import ScriptedModel
 from test_ingest import CELLS, PLAN, WRITE
 
-from wikinotes.ask import NOT_FOUND
-from wikinotes.ingest import ingest
-from wikinotes.models import ConfigError
-from wikinotes.rag import ask_rag, retrieve
+from ragwiki.ask import NOT_FOUND
+from ragwiki.ingest import ingest
+from ragwiki.models import ConfigError
+from ragwiki.rag import ask_rag, retrieve
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def test_retrieve_with_embeddings_ranks_by_similarity_and_caches_vectors(wiki):
     assert [p.citation for p in first] == ["src-cell-biology#^p2"]
     # Paragraphs are embedded once; later calls only embed the question.
     assert [len(batch) for batch in embedder.batches] == [2, 1, 1]
-    assert (wiki.root / ".wikinotes" / "embeddings" / "fake-embedder.json").is_file()
+    assert (wiki.root / ".ragwiki" / "embeddings" / "fake-embedder.json").is_file()
 
 
 def test_ask_rag_answers_from_retrieved_paragraphs_with_one_call(wiki):
@@ -107,8 +107,8 @@ def test_ask_rag_rejects_k_below_one(wiki):
 
 
 def test_build_index_embeds_every_paragraph_once_and_reports_progress(vault, note):
-    from wikinotes.ingest import add_source_only
-    from wikinotes.rag import build_index, index_status
+    from ragwiki.ingest import add_source_only
+    from ragwiki.rag import build_index, index_status
 
     add_source_only(vault, note("cells.md", CELLS))
     embedder, seen = FakeEmbedder(), []

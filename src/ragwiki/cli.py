@@ -6,13 +6,13 @@ from typing import Annotated
 
 import typer
 
-from wikinotes import __version__
-from wikinotes.ask import ask as answer_question
-from wikinotes.ask import cited_paragraph
-from wikinotes.estimate import Estimate, estimate_ingest
-from wikinotes.extract import UnreadableSource, UnsupportedFormat
-from wikinotes.ingest import IngestError, Progress, ingest
-from wikinotes.models import (
+from ragwiki import __version__
+from ragwiki.ask import ask as answer_question
+from ragwiki.ask import cited_paragraph
+from ragwiki.estimate import Estimate, estimate_ingest
+from ragwiki.extract import UnreadableSource, UnsupportedFormat
+from ragwiki.ingest import IngestError, Progress, ingest
+from ragwiki.models import (
     BudgetExceeded,
     ConfigError,
     MeteredModel,
@@ -22,7 +22,7 @@ from wikinotes.models import (
     metered_from_env,
     prices_from_env,
 )
-from wikinotes.vault import STATE_DIR, Vault, VaultError
+from ragwiki.vault import STATE_DIR, Vault, VaultError
 
 app = typer.Typer(
     help="Turn your study material into an interlinked, LLM-maintained Markdown wiki.",
@@ -31,7 +31,7 @@ app = typer.Typer(
 
 VaultOption = Annotated[
     Path | None,
-    typer.Option("--vault", help="Vault folder. Defaults to $WIKINOTES_VAULT or the current one."),
+    typer.Option("--vault", help="Vault folder. Defaults to $RAGWIKI_VAULT or the current one."),
 ]
 
 
@@ -41,7 +41,7 @@ def _fail(message: str) -> typer.Exit:
 
 
 def _open_vault(vault: Path | None) -> Vault:
-    start = vault or os.environ.get("WIKINOTES_VAULT") or Path.cwd()
+    start = vault or os.environ.get("RAGWIKI_VAULT") or Path.cwd()
     try:
         return Vault.find(Path(start))
     except VaultError as error:
@@ -74,7 +74,7 @@ def _print_progress(progress: Progress) -> None:
 
 def _print_estimate(estimate: Estimate) -> None:
     cost = (
-        "price unknown (set WIKINOTES_PRICE_INPUT and WIKINOTES_PRICE_OUTPUT to see it)"
+        "price unknown (set RAGWIKI_PRICE_INPUT and RAGWIKI_PRICE_OUTPUT to see it)"
         if estimate.usd is None
         else f"about ${estimate.usd:.4f}"
     )
@@ -86,7 +86,7 @@ def _print_estimate(estimate: Estimate) -> None:
 
 def _print_version(value: bool) -> None:
     if value:
-        typer.echo(f"wikinotes {__version__}")
+        typer.echo(f"ragwiki {__version__}")
         raise typer.Exit()
 
 
@@ -110,7 +110,7 @@ def init(
     except VaultError as error:
         raise _fail(str(error)) from error
     typer.echo(f"Created a vault at {vault.root}")
-    typer.echo("Next: wikinotes add <file>")
+    typer.echo("Next: ragwiki add <file>")
 
 
 @app.command()
@@ -223,7 +223,7 @@ def status(vault: VaultOption = None) -> None:
 def lab(
     folder: Annotated[
         Path | None,
-        typer.Argument(help="Vault folder to open or create. Defaults to ~/wikinotes-lab."),
+        typer.Argument(help="Vault folder to open or create. Defaults to ~/ragwiki-lab."),
     ] = None,
     port: Annotated[int, typer.Option(help="Port of the local web page.")] = 8765,
     browser: Annotated[bool, typer.Option(help="Open the page in the browser.")] = True,
@@ -234,8 +234,8 @@ def lab(
     if any(importlib.util.find_spec(name) is None for name in ("fastapi", "uvicorn", "multipart")):
         raise _fail(
             "The lab needs its web server. Install it with `uv sync --extra lab` "
-            "or `pip install 'wikinotes[lab]'`."
+            "or `pip install 'ragwiki[lab]'`."
         )
-    from wikinotes import server
+    from ragwiki import server
 
     server.run(folder.expanduser().resolve() if folder else None, port, open_browser=browser)

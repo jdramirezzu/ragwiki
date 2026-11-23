@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from wikinotes.extract import IMAGE_TYPES
-from wikinotes.models import Image
+from ragwiki.extract import IMAGE_TYPES
+from ragwiki.models import Image
 
 SYSTEM = """You transcribe a photo of study notes into Markdown.
 

@@ -2,9 +2,9 @@ import subprocess
 
 import pytest
 
-from wikinotes.domain import Page
-from wikinotes.extract import extract
-from wikinotes.vault import Vault, VaultError
+from ragwiki.domain import Page
+from ragwiki.extract import extract
+from ragwiki.vault import Vault, VaultError
 
 
 def make_note(tmp_path, name="cells.md", text="# Cell biology\n\nThe cell is the unit of life.\n"):
@@ -16,7 +16,7 @@ def make_note(tmp_path, name="cells.md", text="# Cell biology\n\nThe cell is the
 def test_create_builds_the_layout(tmp_path):
     vault = Vault.create(tmp_path / "wiki")
 
-    for name in ("sources", "extracted", "wiki", ".wikinotes"):
+    for name in ("sources", "extracted", "wiki", ".ragwiki"):
         assert (vault.root / name).is_dir()
     for name in ("index.md", "log.md", "SCHEMA.md"):
         assert (vault.root / name).is_file()

@@ -9,7 +9,7 @@ from test_rag import FakeEmbedder
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from wikinotes.server import Config, Lab, create_app  # noqa: E402
+from ragwiki.server import Config, Lab, create_app  # noqa: E402
 
 RAG_ANSWER = {"found": True, "text": "Mitochondria [[src-cell-biology#^p2]]."}
 MD = ("cells.md", CELLS.encode(), "text/markdown")
@@ -46,7 +46,7 @@ def wait(client, job):
 
 
 def test_the_page_and_its_assets_are_served(client):
-    assert "wikinotes lab" in client.get("/").text
+    assert "ragwiki lab" in client.get("/").text
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/static/app.css").status_code == 200
 

@@ -4,10 +4,10 @@ import pytest
 from conftest import ScriptedModel
 from files import PNG
 
-from wikinotes.domain import Source
-from wikinotes.extract import number_blocks
-from wikinotes.ingest import IngestError, ingest, split_source
-from wikinotes.models import Image
+from ragwiki.domain import Source
+from ragwiki.extract import number_blocks
+from ragwiki.ingest import IngestError, ingest, split_source
+from ragwiki.models import Image
 
 CELLS = "# Cell biology\n\nThe cell is the unit of life.\n\nMitochondria produce ATP.\n"
 ENERGY = "# Energy\n\nATP stores energy in phosphate bonds.\n"
@@ -306,7 +306,7 @@ def test_the_same_photo_is_not_transcribed_twice(vault, tmp_path):
 
 
 def test_add_source_only_extracts_without_a_model_and_ingest_builds_the_wiki_later(vault, note):
-    from wikinotes.ingest import add_source_only
+    from ragwiki.ingest import add_source_only
 
     path = note("cells.md", CELLS)
 

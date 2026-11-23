@@ -3,7 +3,7 @@
 This is the other arm of the comparison: the paragraphs most similar to the question are
 retrieved from `extracted/` and the model answers from them in one call. Nothing is written
 to the wiki. Retrieval is lexical (BM25) by default, which is offline and free; with
-`WIKINOTES_EMBEDDING_MODEL` set it uses embeddings from the same provider instead.
+`RAGWIKI_EMBEDDING_MODEL` set it uses embeddings from the same provider instead.
 """
 
 import hashlib
@@ -15,11 +15,11 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from wikinotes.ask import NOT_FOUND
-from wikinotes.ingest import clean_body
-from wikinotes.models import ConfigError, Model, ModelError, estimate_tokens, extract_json
-from wikinotes.search import rank
-from wikinotes.vault import STATE_DIR, Vault
+from ragwiki.ask import NOT_FOUND
+from ragwiki.ingest import clean_body
+from ragwiki.models import ConfigError, Model, ModelError, estimate_tokens, extract_json
+from ragwiki.search import rank
+from ragwiki.vault import STATE_DIR, Vault
 
 DEFAULT_K = 8
 
@@ -115,17 +115,17 @@ class LocalEmbedder:
 
 
 def embedder_from_env() -> OpenAICompatibleEmbedder | None:
-    """The embedder named by WIKINOTES_EMBEDDING_MODEL, or None to use lexical retrieval."""
-    name = os.environ.get("WIKINOTES_EMBEDDING_MODEL")
+    """The embedder named by RAGWIKI_EMBEDDING_MODEL, or None to use lexical retrieval."""
+    name = os.environ.get("RAGWIKI_EMBEDDING_MODEL")
     if not name:
         return None
     return OpenAICompatibleEmbedder(
         name,
-        base_url=os.environ.get("WIKINOTES_EMBEDDING_BASE_URL")
-        or os.environ.get("WIKINOTES_BASE_URL")
+        base_url=os.environ.get("RAGWIKI_EMBEDDING_BASE_URL")
+        or os.environ.get("RAGWIKI_BASE_URL")
         or None,
-        api_key=os.environ.get("WIKINOTES_EMBEDDING_API_KEY")
-        or os.environ.get("WIKINOTES_API_KEY")
+        api_key=os.environ.get("RAGWIKI_EMBEDDING_API_KEY")
+        or os.environ.get("RAGWIKI_API_KEY")
         or None,
     )
 

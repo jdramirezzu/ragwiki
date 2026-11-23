@@ -4,10 +4,10 @@ from test_ask import ANSWER, READ, SEARCH
 from test_ingest import CELLS, PLAN, WRITE
 from typer.testing import CliRunner
 
-from wikinotes import cli
-from wikinotes.compare import compare, save_comparison
-from wikinotes.ingest import ingest
-from wikinotes.lab import readable, rows, save_upload, to_csv
+from ragwiki import cli
+from ragwiki.compare import compare, save_comparison
+from ragwiki.ingest import ingest
+from ragwiki.lab import readable, rows, save_upload, to_csv
 
 RAG_ANSWER = {"found": True, "text": "Mitochondria [[src-cell-biology#^p2]]."}
 
@@ -15,7 +15,7 @@ RAG_ANSWER = {"found": True, "text": "Mitochondria [[src-cell-biology#^p2]]."}
 def test_save_upload_keeps_supported_files_inside_the_vault(vault):
     path = save_upload(vault, "../notes.PDF", b"%PDF-1.4")
 
-    assert path == vault.root / ".wikinotes" / "uploads" / "notes.PDF"
+    assert path == vault.root / ".ragwiki" / "uploads" / "notes.PDF"
     assert path.read_bytes() == b"%PDF-1.4"
 
 
@@ -48,7 +48,7 @@ def test_rows_and_csv_flatten_each_comparison(vault, note):
 def test_lab_command_starts_the_server_with_the_folder(monkeypatch, tmp_path):
     seen = {}
     monkeypatch.setattr(
-        "wikinotes.server.run",
+        "ragwiki.server.run",
         lambda folder, port, open_browser: seen.update(
             folder=folder, port=port, open_browser=open_browser
         ),

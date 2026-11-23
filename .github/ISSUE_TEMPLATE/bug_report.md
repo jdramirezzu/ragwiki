@@ -15,7 +15,7 @@ labels: bug
 
 **Environment**
 
-- wikinotes version (`wikinotes --version`):
+- ragwiki version (`ragwiki --version`):
 - Operating system:
 - Model provider and model name:
 

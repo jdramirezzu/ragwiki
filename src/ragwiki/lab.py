@@ -1,6 +1,6 @@
 """Helpers for the comparison lab, kept apart from Streamlit so they can be tested.
 
-The lab itself is `server.py` and the page in `web/`, started by `wikinotes lab`.
+The lab itself is `server.py` and the page in `web/`, started by `ragwiki lab`.
 """
 
 import csv
@@ -10,8 +10,8 @@ from collections.abc import Iterable
 from dataclasses import asdict
 from pathlib import Path
 
-from wikinotes.compare import Comparison
-from wikinotes.vault import STATE_DIR, Vault
+from ragwiki.compare import Comparison
+from ragwiki.vault import STATE_DIR, Vault
 
 # PDFs, binary text documents (Word, PowerPoint) and plain text.
 LAB_TYPES = ("pdf", "docx", "pptx", "md", "markdown", "txt")

@@ -1,6 +1,6 @@
 """The lab's local web server: a thin HTTP layer over the library and a browser front.
 
-Started by `wikinotes lab`. It listens on localhost only. Model calls run in a background
+Started by `ragwiki lab`. It listens on localhost only. Model calls run in a background
 thread, one job at a time, and the page polls `/api/jobs/<id>` for progress. The API key is
 kept in memory and never sent back to the browser.
 
@@ -22,8 +22,8 @@ from fastapi.responses import FileResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from wikinotes.ask import cited_paragraph
-from wikinotes.compare import (
+from ragwiki.ask import cited_paragraph
+from ragwiki.compare import (
     Ingestion,
     Tally,
     answer_with,
@@ -38,11 +38,11 @@ from wikinotes.compare import (
     set_verdict,
     summarize,
 )
-from wikinotes.estimate import estimate_ingest
-from wikinotes.extract import UnreadableSource, UnsupportedFormat
-from wikinotes.ingest import IngestError, Progress, add_source_only, ingest
-from wikinotes.lab import LAB_TYPES, save_upload, to_csv
-from wikinotes.models import (
+from ragwiki.estimate import estimate_ingest
+from ragwiki.extract import UnreadableSource, UnsupportedFormat
+from ragwiki.ingest import IngestError, Progress, add_source_only, ingest
+from ragwiki.lab import LAB_TYPES, save_upload, to_csv
+from ragwiki.models import (
     DEFAULT_CONTEXT_TOKENS,
     BudgetExceeded,
     ConfigError,
@@ -51,7 +51,7 @@ from wikinotes.models import (
     ModelError,
     OpenAICompatibleModel,
 )
-from wikinotes.rag import (
+from ragwiki.rag import (
     DEFAULT_K,
     LOCAL_MODEL,
     Embedder,
@@ -60,7 +60,7 @@ from wikinotes.rag import (
     build_index,
     index_status,
 )
-from wikinotes.vault import STATE_DIR, Vault, VaultError
+from ragwiki.vault import STATE_DIR, Vault, VaultError
 
 WEB = Path(__file__).with_name("web")
 ERRORS = (
@@ -126,16 +126,16 @@ def _env_number(name: str, default: float) -> float:
 
 
 def config_from_env() -> Config:
-    embedding = os.environ.get("WIKINOTES_EMBEDDING_MODEL", "")
+    embedding = os.environ.get("RAGWIKI_EMBEDDING_MODEL", "")
     retrieval = "provider" if embedding else ("local" if _local_available() else "bm25")
     return Config(
-        model=os.environ.get("WIKINOTES_MODEL", ""),
-        base_url=os.environ.get("WIKINOTES_BASE_URL", ""),
-        api_key=os.environ.get("WIKINOTES_API_KEY", ""),
-        price_input=_env_number("WIKINOTES_PRICE_INPUT", 0.0),
-        price_output=_env_number("WIKINOTES_PRICE_OUTPUT", 0.0),
-        max_usd=_env_number("WIKINOTES_MAX_USD", 1.0),
-        context_tokens=int(_env_number("WIKINOTES_CONTEXT_TOKENS", DEFAULT_CONTEXT_TOKENS)),
+        model=os.environ.get("RAGWIKI_MODEL", ""),
+        base_url=os.environ.get("RAGWIKI_BASE_URL", ""),
+        api_key=os.environ.get("RAGWIKI_API_KEY", ""),
+        price_input=_env_number("RAGWIKI_PRICE_INPUT", 0.0),
+        price_output=_env_number("RAGWIKI_PRICE_OUTPUT", 0.0),
+        max_usd=_env_number("RAGWIKI_MAX_USD", 1.0),
+        context_tokens=int(_env_number("RAGWIKI_CONTEXT_TOKENS", DEFAULT_CONTEXT_TOKENS)),
         retrieval=retrieval,
         embedding_model=embedding,
     )
@@ -175,7 +175,7 @@ class Lab:
         self.busy = threading.Lock()
         if folder is not None and (Path(folder) / STATE_DIR / "state.json").is_file():
             self.vault = Vault(Path(folder))
-        self.suggested = str(folder or Path.home() / "wikinotes-lab")
+        self.suggested = str(folder or Path.home() / "ragwiki-lab")
 
     def model(self) -> MeteredModel:
         if not self.config.model:
@@ -310,7 +310,7 @@ def _comparison(item) -> dict:
 
 
 def create_app(lab: Lab) -> FastAPI:
-    app = FastAPI(title="wikinotes lab", docs_url=None, redoc_url=None)
+    app = FastAPI(title="ragwiki lab", docs_url=None, redoc_url=None)
 
     @app.get("/api/state")
     def state() -> dict:
@@ -548,5 +548,5 @@ def run(folder: Path | None, port: int, open_browser: bool = True) -> None:
     url = f"http://127.0.0.1:{port}"
     if open_browser:
         threading.Timer(1.0, webbrowser.open, args=(url,)).start()
-    print(f"wikinotes lab running at {url} (Ctrl+C to stop)")
+    print(f"ragwiki lab running at {url} (Ctrl+C to stop)")
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")

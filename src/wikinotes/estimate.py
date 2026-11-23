@@ -60,7 +60,8 @@ def estimate_ingest(
     Prices are in USD per million tokens. Files already in the vault cost nothing. Raises
     the same errors as ingestion for a file that cannot be read.
     """
-    known = {entry["sha256"] for entry in vault.sources().values()}
+    # A source added for retrieval only still costs its wiki pages.
+    known = {e["sha256"] for key, e in vault.sources().items() if vault.in_wiki(key)}
     fixed = estimate_tokens(SYSTEM + vault.schema()) + PROMPT_OVERHEAD
     index = estimate_tokens(vault.index())
     pages = _pages_context(vault)

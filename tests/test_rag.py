@@ -104,3 +104,19 @@ def test_ask_rag_on_an_empty_vault_abstains_without_calling_the_model(vault):
 def test_ask_rag_rejects_k_below_one(wiki):
     with pytest.raises(ConfigError, match="k must be at least 1"):
         ask_rag(wiki, ScriptedModel(), "ATP?", k=0)
+
+
+def test_build_index_embeds_every_paragraph_once_and_reports_progress(vault, note):
+    from wikinotes.ingest import add_source_only
+    from wikinotes.rag import build_index, index_status
+
+    add_source_only(vault, note("cells.md", CELLS))
+    embedder, seen = FakeEmbedder(), []
+
+    before = index_status(vault, embedder)
+    after = build_index(vault, embedder, lambda done, total: seen.append((done, total)))
+
+    assert (before.indexed, before.paragraphs, before.ready) == (0, 2, False)
+    assert (after.indexed, after.paragraphs, after.ready) == (2, 2, True)
+    assert seen == [(2, 2)]
+    assert embedder.batches == [["The cell is the unit of life.", "Mitochondria produce ATP."]]

@@ -20,6 +20,7 @@ wikinotes = "wikinotes.cli:app"
 [project.optional-dependencies]
 lab = [
     "fastapi>=0.115",
+    "fastembed>=0.4",
     "python-multipart>=0.0.9",
     "uvicorn>=0.30",
 ]

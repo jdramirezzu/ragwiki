@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>wikinotes lab</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23171a2b'/%3E%3Cpath d='M8 10h7v12H8zM17 10h7v12h-7z' fill='none' stroke='%23f4efe4' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23171a2b'/%3E%3Crect x='8' y='9' width='7' height='14' rx='1.5' fill='%238b85ff'/%3E%3Crect x='17' y='9' width='7' height='14' rx='1.5' fill='%23fb8a52'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
@@ -14,44 +14,46 @@
     <span>wikinotes <b>lab</b></span>
   </div>
   <div class="status">
-    <button class="chip" id="vaultChip" type="button" title="Change vault folder">No vault</button>
+    <button class="chip" id="vaultChip" type="button" title="Change the experiment folder">No folder</button>
     <button class="chip" id="modelChip" type="button" title="Model settings">No model</button>
     <span class="chip quiet" id="spendChip" hidden></span>
   </div>
 </header>
 
 <main>
-  <!-- first run: choose a vault -->
+  <!-- first run: choose a folder -->
   <section id="welcome" class="welcome" hidden>
-    <p class="eyebrow">Wiki or RAG?</p>
-    <h1>Find out which one your documents need.</h1>
-    <p class="lede">The same model answers your questions twice: from a wiki it wrote when you added
-      the files, and from paragraphs retrieved for each question. You compare answers, citations,
-      cost and time, and get a recommendation.</p>
+    <p class="eyebrow">Vector search or WikiLLM?</p>
+    <h1>Build the one your documents need, or both and let your questions decide.</h1>
+    <p class="lede"><b class="rag-t">Vector search (RAG)</b> finds the closest paragraphs every time you ask.
+      A <b class="wiki-t">WikiLLM</b> has a model write a linked wiki once, when you add files, and then reads it.
+      This lab builds either one from your files, answers with it, and compares both with the same model.</p>
     <form id="vaultForm" class="vaultform">
       <label for="folder">Folder for this experiment</label>
       <div class="row">
         <input id="folder" name="folder" required autocomplete="off" spellcheck="false">
         <button class="btn primary" type="submit">Open or create</button>
       </div>
-      <p class="hint">A folder of plain Markdown. It opens in Obsidian or any editor, and nothing leaves your computer except the model calls.</p>
+      <p class="hint">A folder of plain Markdown that opens in Obsidian or any editor. Nothing leaves your computer except the model calls.</p>
     </form>
   </section>
 
-  <!-- the three steps -->
   <section id="workspace" hidden>
     <nav class="steps" role="tablist" aria-label="Steps">
-      <button role="tab" id="tab-sources" aria-controls="sources" aria-selected="true"><span>1</span>Sources <em id="countSources"></em></button>
-      <button role="tab" id="tab-compare" aria-controls="compare" aria-selected="false"><span>2</span>Compare <em id="countCompare"></em></button>
-      <button role="tab" id="tab-results" aria-controls="results" aria-selected="false"><span>3</span>Results</button>
+      <button role="tab" aria-controls="sources" aria-selected="true"><span>1</span>Files <em id="countSources"></em></button>
+      <button role="tab" aria-controls="build" aria-selected="false"><span>2</span>Build</button>
+      <button role="tab" aria-controls="ask" aria-selected="false"><span>3</span>Ask</button>
+      <button role="tab" aria-controls="results" aria-selected="false"><span>4</span>Results</button>
     </nav>
 
-    <!-- 1 · sources -->
-    <div role="tabpanel" id="sources" class="panel" aria-labelledby="tab-sources">
+    <!-- 1 · files -->
+    <div role="tabpanel" id="sources" class="panel">
       <div class="grid2">
         <div>
           <h2>Add your files</h2>
-          <p class="sub">PDF with a text layer, Word (.docx), PowerPoint (.pptx) and plain text (.txt, .md). Both arms read the same paragraphs extracted from them.</p>
+          <p class="sub">PDF with a text layer, Word (.docx), PowerPoint (.pptx) and plain text (.txt, .md).
+            Adding is free: the text is extracted on your computer and split into citable paragraphs.
+            Both architectures read exactly these paragraphs.</p>
           <label class="drop" id="drop" tabindex="0">
             <input type="file" id="fileInput" multiple hidden>
             <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 31V11m0 0-7 7m7-7 7 7M10 30v6a3 3 0 0 0 3 3h22a3 3 0 0 0 3-3v-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -59,27 +61,115 @@
             <span>or click to choose</span>
             <span class="types" id="types"></span>
           </label>
-          <div id="estimate" class="estimate" hidden aria-live="polite"></div>
-          <div id="ingestLog" class="log" hidden aria-live="polite"></div>
+          <div id="addLog" class="log" hidden aria-live="polite"></div>
         </div>
         <div>
-          <h2>In the vault</h2>
+          <h2>Your files</h2>
           <p class="sub" id="vaultPath"></p>
           <ul class="sources" id="sourceList"></ul>
+          <button class="btn primary next" type="button" data-goto="build" id="toBuild" hidden>Next: build →</button>
         </div>
       </div>
     </div>
 
-    <!-- 2 · compare -->
-    <div role="tabpanel" id="compare" class="panel" aria-labelledby="tab-compare" hidden>
+    <!-- 2 · build -->
+    <div role="tabpanel" id="build" class="panel" hidden>
+      <h2>Build one architecture, or both</h2>
+      <p class="sub">They answer from the same paragraphs with the same model. What changes is when the work happens:
+        vector search does it at every question, the WikiLLM does it once, when files are added.</p>
+
+      <div class="builders">
+        <article class="builder rag">
+          <header>
+            <span class="tag">Vector search · RAG</span>
+            <h3>Finds the paragraphs closest to each question</h3>
+          </header>
+          <ol class="flow" aria-label="How vector search works">
+            <li>paragraphs</li><li>vectors</li><li>closest <i>k</i></li><li>1 model call</li>
+          </ol>
+          <div class="field">
+            <label for="retrieval">Search with</label>
+            <select id="retrieval">
+              <option value="local">Embeddings on this computer (free)</option>
+              <option value="provider">Embeddings from your provider</option>
+              <option value="bm25">Keywords only, BM25 (no index)</option>
+            </select>
+            <input id="embeddingModel" placeholder="" autocomplete="off" spellcheck="false" aria-label="Embedding model">
+            <small id="retrievalNote" class="hint"></small>
+          </div>
+          <div class="progress"><i id="ragBar"></i></div>
+          <p class="status-line" id="ragStatus"></p>
+          <dl class="costs">
+            <div><dt>Building</dt><dd id="ragBuildCost"></dd></div>
+            <div><dt>Each question</dt><dd>1 model call · about 1,400 tokens in the study</dd></div>
+          </dl>
+          <button class="btn primary" type="button" id="buildIndex">Build vector index</button>
+          <div id="indexLog" class="log" hidden aria-live="polite"></div>
+        </article>
+
+        <article class="builder wiki">
+          <header>
+            <span class="tag">WikiLLM</span>
+            <h3>Writes a linked wiki once, then reads it to answer</h3>
+          </header>
+          <ol class="flow" aria-label="How the WikiLLM works">
+            <li>paragraphs</li><li>model plans</li><li>model writes pages</li><li>agent reads pages</li>
+          </ol>
+          <div class="progress"><i id="wikiBar"></i></div>
+          <p class="status-line" id="wikiStatus"></p>
+          <dl class="costs">
+            <div><dt>Building</dt><dd id="wikiBuildCost"></dd></div>
+            <div><dt>Each question</dt><dd>up to 8 model calls · about 10,600 tokens in the study</dd></div>
+          </dl>
+          <button class="btn primary" type="button" id="buildWiki">Build WikiLLM</button>
+          <div id="wikiLog" class="log" hidden aria-live="polite"></div>
+        </article>
+      </div>
+
+      <h2 class="mt">How they differ</h2>
+      <p class="sub">From a study with 100 scientific papers, 100 questions and the same model for both.</p>
+      <div class="tablewrap">
+        <table class="diff">
+          <thead><tr><th></th><th class="rag-t">Vector search (RAG)</th><th class="wiki-t">WikiLLM</th></tr></thead>
+          <tbody>
+            <tr><th>When the work happens</th><td>At every question</td><td>Once, when a file is added</td></tr>
+            <tr><th>Building</th><td>Free with local embeddings; minutes</td><td>2 model calls per file; 1.6–2.9 USD and 1.8 h for 100 papers</td></tr>
+            <tr><th>Cost per question</th><td><b>1×</b></td><td>7.2× and 4.1× the time</td></tr>
+            <tr><th>Correct answers (5 paragraphs)</th><td>0.48</td><td><b>0.70</b></td></tr>
+            <tr><th>Correct answers (20 paragraphs)</th><td>0.64</td><td>0.70: the gap is no longer significant</td></tr>
+            <tr><th>Questions that join several documents</th><td>Misses what it does not retrieve</td><td><b>Strongest</b>: pages already join sources</td></tr>
+            <tr><th>When files change</th><td>Re-embed the changed file</td><td>Pages are rewritten; old values may linger</td></tr>
+            <tr><th>What you get besides answers</th><td>Nothing to read</td><td>A wiki of linked pages you can browse</td></tr>
+            <tr><th>Typical failure</th><td>“Not in your files” when retrieval misses</td><td>Answers when it should abstain; misses what it did not capture</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="choose">
+        <div class="choose-card rag"><h3>Choose vector search when</h3><ul>
+          <li>budget or speed matter most</li><li>files change often</li>
+          <li>questions ask for one fact from one document</li><li>you will ask few questions</li></ul></div>
+        <div class="choose-card wiki"><h3>Choose a WikiLLM when</h3><ul>
+          <li>questions join or compare several documents</li><li>files are stable and you will ask many questions</li>
+          <li>you also want to read and browse the knowledge</li><li>a better answer is worth several times the cost</li></ul></div>
+        <div class="choose-card both"><h3>Not sure?</h3><p>Build both and ask the same questions in step 3. The lab compares the answers and recommends one for your files.</p></div>
+      </div>
+    </div>
+
+    <!-- 3 · ask -->
+    <div role="tabpanel" id="ask" class="panel" hidden>
       <div class="composer">
         <div class="composer-head">
           <div>
-            <h2>Ask both</h2>
-            <p class="sub">Write the questions you really need answered. An expected answer is optional: key terms separated by commas, or <code>none</code> when your files do not answer it.</p>
+            <h2>Ask your files</h2>
+            <div class="seg mode" role="radiogroup" aria-label="Answer with">
+              <button type="button" role="radio" data-mode="both" aria-checked="true">Compare both</button>
+              <button type="button" role="radio" data-mode="rag" aria-checked="false">Vector search only</button>
+              <button type="button" role="radio" data-mode="wiki" aria-checked="false">WikiLLM only</button>
+            </div>
+            <p class="sub" id="modeNote"></p>
           </div>
-          <div class="kbox">
-            <label for="k">RAG retrieves <output id="kOut">8</output> paragraphs</label>
+          <div class="kbox" id="kbox">
+            <label for="k">Vector search reads <output id="kOut">8</output> paragraphs</label>
             <input type="range" id="k" min="1" max="30" value="8">
           </div>
         </div>
@@ -88,20 +178,20 @@
           <button class="btn ghost" id="addQuestion" type="button">+ Add a question</button>
           <button class="btn ghost" id="pasteQuestions" type="button">Paste several</button>
           <span class="spacer"></span>
-          <span class="hint" id="askHint">The wiki navigates its pages (up to 8 calls); RAG answers in 1 call.</span>
-          <button class="btn primary" id="askBoth" type="button">Ask both</button>
+          <span class="hint" id="askHint"></span>
+          <button class="btn primary" id="askButton" type="button">Ask</button>
         </div>
         <div id="askLog" class="log" hidden aria-live="polite"></div>
       </div>
-      <div id="comparisons" class="comparisons"></div>
+      <div id="answers" class="comparisons"></div>
     </div>
 
-    <!-- 3 · results -->
-    <div role="tabpanel" id="results" class="panel" aria-labelledby="tab-results" hidden>
+    <!-- 4 · results -->
+    <div role="tabpanel" id="results" class="panel" hidden>
       <div id="advice" class="advice"></div>
       <div id="arms" class="arms"></div>
       <div class="tablehead">
-        <h2>Every question</h2>
+        <h2>Every comparison</h2>
         <div class="row">
           <a class="btn ghost" href="/api/export.csv" download>Download CSV</a>
           <a class="btn ghost" href="/api/export.jsonl" download>Download JSONL</a>
@@ -112,8 +202,8 @@
         <summary>How to read these results</summary>
         <ul>
           <li><b>Answered</b> counts answers with at least one valid citation. It is not correctness: expected answers and your verdicts measure quality.</li>
-          <li>The wiki pays once to write its pages and then spends more per question, because it reads them. RAG has no building cost and makes one call per question.</li>
-          <li>In the study behind wikinotes (100 arXiv papers, 100 questions, the same model for both arms) the wiki answered 0.70 of the answerable questions and RAG 0.48 with 5 retrieved paragraphs, at 7.2× the cost per question. With 20 paragraphs the gap fell to +0.06 and was no longer significant. Try more than one value of <i>k</i>.</li>
+          <li>The WikiLLM pays once to write its pages and then spends more per question, because it reads them. Vector search has no model cost to build and makes one call per question.</li>
+          <li>In the study behind wikinotes the WikiLLM answered 0.70 of the answerable questions and RAG 0.48 with 5 retrieved paragraphs, at 7.2× the cost per question. With 20 paragraphs the gap fell to +0.06 and was no longer significant. Try more than one value of <i>k</i>.</li>
         </ul>
       </details>
     </div>
@@ -132,7 +222,7 @@
 <dialog id="settings">
   <form method="dialog" id="settingsForm">
     <h2>Model</h2>
-    <p class="sub">Both arms use this same model. Any OpenAI-compatible endpoint works, including a local one.</p>
+    <p class="sub">Both architectures use this same model, so the only difference is how knowledge reaches it. Any OpenAI-compatible endpoint works, including a local one.</p>
     <div class="fields">
       <label>Model name<input name="model" placeholder="deepseek-chat, gpt-4o-mini, llama3.1…" autocomplete="off"></label>
       <label>Base URL<input name="base_url" placeholder="https://api.provider.com/v1 · http://localhost:11434/v1" autocomplete="off"></label>
@@ -141,11 +231,10 @@
       <label>Output price <small>USD per million tokens</small><input name="price_output" type="number" min="0" step="any"></label>
       <label>Spending cap <small>USD per session, 0 = none</small><input name="max_usd" type="number" min="0" step="any"></label>
       <label>Context window <small>tokens</small><input name="context_tokens" type="number" min="1000" step="1000"></label>
-      <label>Embedding model for RAG <small>optional; empty = BM25, offline</small><input name="embedding_model" autocomplete="off"></label>
     </div>
     <div class="dialog-foot">
       <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
-      <button class="btn primary" value="save" id="saveSettings">Save</button>
+      <button class="btn primary" value="save">Save</button>
     </div>
   </form>
 </dialog>

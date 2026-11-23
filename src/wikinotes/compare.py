@@ -136,48 +136,59 @@ def compare(
     `prices` are USD per million tokens; by default they are read from a `MeteredModel`.
     """
     prices = prices if prices is not None else _prices(model)
-
-    wiki_tally = Tally(model)
-    wiki = ask(vault, wiki_tally, question)
-    wiki_arm = ArmResult(
-        "wiki",
-        wiki.found,
-        wiki.text,
-        wiki.citations,
-        wiki_tally.calls,
-        wiki_tally.input_tokens,
-        wiki_tally.output_tokens,
-        round(wiki_tally.seconds, 3),
-        _usd(wiki_tally, prices),
-        {"pages_read": wiki.pages_read, "steps": wiki.steps},
+    return Comparison(
+        id=uuid.uuid4().hex[:12],
+        time=_now(),
+        question=question,
+        expected=expected.strip(),
+        wiki=answer_with(vault, model, question, "wiki", prices=prices),
+        rag=answer_with(vault, model, question, "rag", k=k, embedder=embedder, prices=prices),
     )
 
-    rag_tally = Tally(model)
-    rag = ask_rag(vault, rag_tally, question, k=k, embedder=embedder)
-    rag_arm = ArmResult(
-        "rag",
-        rag.found,
-        rag.text,
-        rag.citations,
-        rag_tally.calls,
-        rag_tally.input_tokens,
-        rag_tally.output_tokens,
-        round(rag_tally.seconds, 3),
-        _usd(rag_tally, prices),
-        {
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def answer_with(
+    vault: Vault,
+    model: Model,
+    question: str,
+    arm: str,
+    *,
+    k: int = DEFAULT_K,
+    embedder: Embedder | None = None,
+    prices: tuple[float, float] | None = None,
+) -> ArmResult:
+    """Answer with one architecture only, measured the same way as in a comparison."""
+    if arm not in ARMS:
+        raise ValueError(f"arm must be one of {', '.join(ARMS)}, got '{arm}'")
+    prices = prices if prices is not None else _prices(model)
+    tally = Tally(model)
+    if arm == "wiki":
+        wiki = ask(vault, tally, question)
+        found, text, citations = wiki.found, wiki.text, wiki.citations
+        detail: dict = {"pages_read": wiki.pages_read, "steps": wiki.steps}
+    else:
+        rag = ask_rag(vault, tally, question, k=k, embedder=embedder)
+        found, text, citations = rag.found, rag.text, rag.citations
+        detail = {
             "retrieval": rag.retrieval,
             "k": k,
             "retrieved": [passage.citation for passage in rag.passages],
             "context_tokens": rag.context_tokens,
-        },
-    )
-    return Comparison(
-        id=uuid.uuid4().hex[:12],
-        time=datetime.now(UTC).isoformat(timespec="seconds"),
-        question=question,
-        expected=expected.strip(),
-        wiki=wiki_arm,
-        rag=rag_arm,
+        }
+    return ArmResult(
+        arm,
+        found,
+        text,
+        citations,
+        tally.calls,
+        tally.input_tokens,
+        tally.output_tokens,
+        round(tally.seconds, 3),
+        _usd(tally, prices),
+        detail,
     )
 
 
@@ -410,3 +421,40 @@ def recommend(summary: Summary, k: int | None = None) -> Recommendation:
         "if you value reading and browsing the pages it writes."
     )
     return Recommendation("rag", "Similar quality: RAG is enough for your corpus", reasons)
+
+
+# --- answers with one architecture ------------------------------------------------------
+
+ANSWERS = "answers.jsonl"
+
+
+@dataclass
+class SingleAnswer:
+    """A question answered with only the architecture the person chose to build."""
+
+    id: str
+    time: str
+    question: str
+    result: ArmResult
+
+
+def record_answer(vault: Vault, question: str, result: ArmResult) -> SingleAnswer:
+    answer = SingleAnswer(uuid.uuid4().hex[:12], _now(), question, result)
+    path = _path(vault, ANSWERS)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(asdict(answer), ensure_ascii=False) + "\n")
+    return answer
+
+
+def load_answers(vault: Vault) -> list[SingleAnswer]:
+    path = _path(vault, ANSWERS)
+    if not path.is_file():
+        return []
+    answers = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            data = json.loads(line)
+            data["result"] = ArmResult(**data["result"])
+            answers.append(SingleAnswer(**data))
+    return answers

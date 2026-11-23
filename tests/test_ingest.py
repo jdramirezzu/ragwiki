@@ -303,3 +303,26 @@ def test_the_same_photo_is_not_transcribed_twice(vault, tmp_path):
 
     assert result.skipped
     assert model.calls == []
+
+
+def test_add_source_only_extracts_without_a_model_and_ingest_builds_the_wiki_later(vault, note):
+    from wikinotes.ingest import add_source_only
+
+    path = note("cells.md", CELLS)
+
+    added = add_source_only(vault, path)
+    again = add_source_only(vault, path)
+
+    assert (added.source_id, added.paragraphs, added.skipped) == ("src-cell-biology", 2, False)
+    assert again.skipped
+    assert vault.in_wiki("src-cell-biology") is False
+    assert vault.page_slugs() == []
+    assert vault.original_path("src-cell-biology").name == "src-cell-biology.md"
+
+    result = ingest(vault, ScriptedModel(PLAN, WRITE), path)
+
+    assert result.source_id == "src-cell-biology" and not result.skipped
+    assert result.created == ["cell", "mitochondria"]
+    assert vault.in_wiki("src-cell-biology") is True
+    assert list(vault.sources()) == ["src-cell-biology"]
+    assert ingest(vault, ScriptedModel(), path).skipped

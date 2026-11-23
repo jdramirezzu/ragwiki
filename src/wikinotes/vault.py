@@ -90,7 +90,23 @@ class Vault:
             candidate = f"{base}-{number}"
         return candidate
 
-    def add_source(self, source: Source, original: Path) -> Source:
+    def in_wiki(self, source_id: str) -> bool:
+        """Whether the wiki was built from this source. Older vaults always built it."""
+        return bool(self.sources()[source_id].get("wiki", True))
+
+    def mark_in_wiki(self, source_id: str) -> None:
+        state = self._read_state()
+        state["sources"][source_id]["wiki"] = True
+        self._write_state(state)
+
+    def original_path(self, source_id: str) -> Path:
+        """The copy of the original file kept in `sources/`."""
+        matches = sorted((self.root / "sources").glob(f"{source_id}.*"))
+        if not matches:
+            raise VaultError(f"The original file of {source_id} is missing")
+        return matches[0]
+
+    def add_source(self, source: Source, original: Path, in_wiki: bool = True) -> Source:
         stored = source if source.id else replace(source, id=self.new_id(source.title))
         original = Path(original)
         shutil.copyfile(original, self.root / "sources" / f"{stored.id}{original.suffix.lower()}")
@@ -109,6 +125,7 @@ class Vault:
             "original": stored.original,
             "sha256": stored.sha256,
             "added": date.today().isoformat(),
+            "wiki": in_wiki,
         }
         self._write_state(state)
         return stored

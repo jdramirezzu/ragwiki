@@ -10,7 +10,7 @@ Cada afirmación enlaza al párrafo del que salió.
 
 ## Míralo en 90 segundos
 
-[![Mira la introducción de 90 segundos a ragwiki](docs/video/media/poster-es.png)](docs/video/media/ragwiki-intro-es.mp4)
+[![Mira la introducción de 90 segundos a ragwiki](docs/video/media/poster-es.png)](https://jdramirezzu.github.io/ragwiki/video/#es)
 
 El video sigue una corrida real con cinco artículos de arXiv sobre wikis mantenidas por LLM,
 respondidos por `deepseek-flash`:
@@ -23,7 +23,7 @@ respondidos por `deepseek-flash`:
 4. **Resultados.** Una recomendación para ese corpus, con costos, tiempos y los veredictos de la
    persona.
 
-[Míralo en inglés](docs/video/media/ragwiki-intro-en.mp4). El video se genera con código en
+[Míralo en inglés](https://jdramirezzu.github.io/ragwiki/video/#en). El video se genera con código en
 [`docs/video`](docs/video/README.md), así que se puede actualizar cuando cambie el laboratorio.
 
 > Estado: desarrollo inicial, construido de forma abierta a partir de un proyecto de

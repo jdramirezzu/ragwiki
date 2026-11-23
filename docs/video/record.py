@@ -23,9 +23,31 @@ with sync_playwright() as p:
     duration = page.evaluate("window.DURATION")
     frames = int(duration * fps)
     ffmpeg = subprocess.Popen(
-        [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "image2pipe",
-         "-framerate", str(fps), "-c:v", "mjpeg", "-i", "-", "-c:v", "libx264",
-         "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "medium", "-movflags", "+faststart", out],
+        [
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-y",
+            "-loglevel",
+            "error",
+            "-f",
+            "image2pipe",
+            "-framerate",
+            str(fps),
+            "-c:v",
+            "mjpeg",
+            "-i",
+            "-",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-crf",
+            "20",
+            "-preset",
+            "medium",
+            "-movflags",
+            "+faststart",
+            out,
+        ],
         stdin=subprocess.PIPE,
     )
     for frame in range(frames):

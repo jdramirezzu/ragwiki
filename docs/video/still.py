@@ -1,4 +1,5 @@
 """Save still frames of video.html at given times, to check the layout."""
+
 import sys
 from pathlib import Path
 

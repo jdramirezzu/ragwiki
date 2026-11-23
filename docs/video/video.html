@@ -1,0 +1,327 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ragwiki intro</title>
+<style>
+:root{--bg:#10121d;--bg2:#181b2b;--ink:#f3efe6;--mute:#9aa0b8;--wiki:#8b85ff;--wiki2:#4f46e5;--rag:#fb8a52;--rag2:#c2410c;--ok:#4ade80;--gold:#f3d36b;
+  --sans:"Inter","Segoe UI",system-ui,sans-serif;--serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;
+  background:radial-gradient(1200px 700px at 15% 10%,#1d2140 0,transparent 60%),radial-gradient(1000px 700px at 90% 90%,#2a1a17 0,transparent 55%),var(--bg)}
+.scene{position:absolute;inset:0;opacity:0;padding:90px 120px}
+.a{opacity:0}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+h1{font:700 118px/1 var(--sans);letter-spacing:-.04em;margin:0}
+h2{font:600 64px/1.08 var(--serif);margin:0;letter-spacing:-.01em}
+h3{font:600 40px/1.15 var(--serif);margin:0}
+p.lead{font-size:36px;line-height:1.35;color:#d9d5cc;max-width:1400px;margin:28px 0 0}
+.mark{display:inline-flex;gap:12px;margin-bottom:34px}.mark i{width:44px;height:96px;border-radius:9px;display:block}
+.mark .w{background:var(--wiki)}.mark .r{background:var(--rag)}
+.eyebrow{font:600 24px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.w-t{color:var(--wiki)}.r-t{color:var(--rag)}
+/* two architectures */
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:60px}
+.lane{background:var(--bg2);border:1px solid #2b3050;border-radius:28px;padding:40px 44px;border-top:8px solid}
+.lane.r{border-top-color:var(--rag)}.lane.w{border-top-color:var(--wiki)}
+.lane h3{margin-bottom:10px}
+.lane .sub{font-size:28px;color:var(--mute);margin-bottom:34px}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
+.node{font:500 22px var(--mono);padding:10px 14px;border-radius:14px;background:#22263b;border:1px solid #363b5c;white-space:nowrap}
+.arrow{font-size:28px;color:var(--mute)}
+.lane.r .hot{background:#3a2218;border-color:var(--rag);color:#ffc2a3}
+.lane.w .hot{background:#25224f;border-color:var(--wiki);color:#cfccff}
+.when{margin-top:30px;font-size:28px}
+.when b{font-weight:650}
+/* screenshots */
+.frame{position:absolute;left:150px;top:118px;width:1620px;height:800px;border-radius:22px;overflow:hidden;background:#f6f3ec;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}
+.bar{height:44px;background:#e8e3d8;display:flex;align-items:center;gap:10px;padding:0 18px}
+.bar i{width:14px;height:14px;border-radius:50%;background:#cfc8b8;display:block}
+.bar span{margin-left:18px;font:500 17px var(--mono);color:#6f7183;background:#f6f3ec;padding:4px 16px;border-radius:8px}
+.view{position:absolute;left:0;right:0;top:44px;bottom:0;overflow:hidden}
+.view img{position:absolute;left:0;top:0;width:100%;transform-origin:0 0}
+.layer{position:absolute;left:0;top:0;width:100%;transform-origin:0 0}
+.layer img{position:relative;display:block}
+.ring{position:absolute;border:5px solid var(--gold);border-radius:16px;box-shadow:0 0 0 9999px rgba(16,18,29,.42);opacity:0}
+.cap{position:absolute;left:150px;right:150px;bottom:34px;display:flex;align-items:baseline;gap:24px}
+.cap .step{font:700 26px var(--mono);color:var(--bg);background:var(--gold);padding:8px 16px;border-radius:10px;white-space:nowrap}
+.cap .txt{font-size:34px;line-height:1.25}
+.cap .txt b{color:var(--gold);font-weight:650}
+/* advantages */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:56px}
+.card{background:var(--bg2);border:1px solid #2b3050;border-radius:24px;padding:34px 36px;min-height:250px}
+.card .ic{font:700 22px var(--mono);color:var(--gold);letter-spacing:.12em}
+.card h4{font:650 34px/1.2 var(--sans);margin:14px 0 12px}
+.card p{font-size:25px;line-height:1.4;color:#c9c5bc;margin:0}
+/* numbers */
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:64px}
+.num{background:var(--bg2);border-radius:24px;padding:40px;border:1px solid #2b3050}
+.num .big{font:700 92px/1 var(--sans);letter-spacing:-.03em;white-space:nowrap}
+.num .lab{font-size:28px;color:#cfcac0;margin-top:16px;line-height:1.35}
+.foot{font-size:24px;color:var(--mute);margin-top:44px}
+/* cta */
+.code{font:500 38px/1.6 var(--mono);background:#0b0c14;border:1px solid #2b3050;border-radius:22px;padding:34px 50px;margin-top:50px;text-align:left}
+.code .p{color:var(--mute)}
+.url{font:600 44px var(--mono);color:var(--gold);margin-top:44px}
+.small{font-size:26px;color:var(--mute);margin-top:26px}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- S0 title -->
+<section class="scene center" data-s="0" data-e="5.2">
+  <div class="mark a" data-at="0.2"><i class="w"></i><i class="r"></i></div>
+  <h1 class="a" data-at="0.5">ragwiki</h1>
+  <p class="lead a" data-at="1.1" data-t="tagline"></p>
+</section>
+
+<!-- S1 two architectures -->
+<section class="scene" data-s="5" data-e="14.6">
+  <div class="eyebrow a" data-at="0.1" data-t="s1eyebrow"></div>
+  <h2 class="a" data-at="0.3" data-t="s1title"></h2>
+  <div class="lanes">
+    <div class="lane r a" data-at="0.9">
+      <h3 class="r-t" data-t="ragname"></h3>
+      <div class="sub" data-t="ragsub"></div>
+      <div class="flow">
+        <span class="node a" data-at="1.4" data-t="nq"></span><span class="arrow a" data-at="1.7">→</span>
+        <span class="node a" data-at="1.9" data-t="nclosest"></span><span class="arrow a" data-at="2.2">→</span>
+        <span class="node hot a" data-at="2.4" data-t="ncall"></span>
+      </div>
+      <div class="when a" data-at="3" data-t="ragwhen"></div>
+    </div>
+    <div class="lane w a" data-at="3.8">
+      <h3 class="w-t" data-t="wikiname"></h3>
+      <div class="sub" data-t="wikisub"></div>
+      <div class="flow">
+        <span class="node a" data-at="4.3" data-t="nfiles"></span><span class="arrow a" data-at="4.6">→</span>
+        <span class="node hot a" data-at="4.8" data-t="nwrites"></span><span class="arrow a" data-at="5.1">→</span>
+        <span class="node a" data-at="5.3" data-t="nagent"></span>
+      </div>
+      <div class="when a" data-at="5.9" data-t="wikiwhen"></div>
+    </div>
+  </div>
+</section>
+
+<!-- S2 question -->
+<section class="scene center" data-s="14.4" data-e="19.2">
+  <h2 class="a" data-at="0.2" style="max-width:1500px" data-t="s2title"></h2>
+  <p class="lead a" data-at="1.2" data-t="s2lead"></p>
+</section>
+
+<!-- S3 files -->
+<section class="scene" data-s="19" data-e="27.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765 · ragwiki lab</span></div>
+    <div class="view"><div class="layer" data-kb="1,0,-0.05 1.12,-0.05,-0.12"><img src="shots/01-files.png"><div class="ring" data-at="1.8" data-until="4.6" style="left:10.8%;top:29.6%;width:42.9%;height:23.6%"></div><div class="ring" data-at="4.8" data-until="8" style="left:54.5%;top:26.2%;width:34.7%;height:42.2%"></div></div></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step1"></span><span class="txt" data-t="cap1"></span></div>
+</section>
+
+<!-- S4 build -->
+<section class="scene" data-s="27" data-e="37.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#build</span></div>
+    <div class="view"><div class="layer" data-kb="1,0,-0.06 1.05,-0.02,-0.08" data-until="5"><img src="shots/02-build-before.png"><div class="ring" data-at="1.4" data-until="3.2" style="left:11.2%;top:28.5%;width:38.6%;height:62%"></div><div class="ring" data-at="3.4" data-until="4.8" style="left:51.6%;top:52%;width:37.6%;height:9%"></div></div></div>
+    <div class="view a" data-at="5"><div class="layer" data-kb="1,0,-0.04 1.08,-0.06,-0.1"><img src="shots/03-build-ready.png"><div class="ring" data-at="1.4" data-until="5" style="left:50.2%;top:29.5%;width:38.4%;height:60%"></div></div></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step2"></span><span class="txt" data-t="cap2"></span></div>
+  <div class="cap a" data-at="5.2" style="background:var(--bg)"><span class="step" data-t="step2"></span><span class="txt" data-t="cap2b"></span></div>
+</section>
+
+<!-- S4b how they differ -->
+<section class="scene" data-s="37" data-e="42.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#build</span></div>
+    <div class="view"><img src="shots/03b-build-differ.png" data-kb="1,0,0 1.06,-0.02,-0.02"></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step2"></span><span class="txt" data-t="cap2c"></span></div>
+</section>
+
+<!-- S5 ask: single fact -->
+<section class="scene" data-s="42" data-e="48.2">
+  <div class="frame a" data-at="0" style="background:#f6f3ec">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#ask · Compare both</span></div>
+    <div class="view"><div class="layer" data-kb="0.92,0.04,0.12 0.96,0.02,0.1"><img src="shots/04d-ask-fact.png"><div class="ring" data-at="1.8" data-until="6" style="left:0.5%;top:64%;width:99%;height:15%"></div></div></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step3"></span><span class="txt" data-t="cap3"></span></div>
+</section>
+
+<!-- S6 ask: several papers -->
+<section class="scene" data-s="48" data-e="56.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#ask · Compare both</span></div>
+    <div class="view"><img src="shots/04c-ask-cross.png" data-pan="0.98" style="left:2%;width:96%"></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step3"></span><span class="txt" data-t="cap3b"></span></div>
+</section>
+
+<!-- S7 citation -->
+<section class="scene" data-s="56" data-e="61.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#ask · WikiLLM only</span></div>
+    <div class="view"><div class="layer" data-kb="1,0,0 1.06,-0.05,-0.02"><img src="shots/05-citation.png"><div class="ring" data-at="1.2" data-until="5" style="left:69.6%;top:0.6%;width:30%;height:98.8%"></div></div></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step3"></span><span class="txt" data-t="cap4"></span></div>
+</section>
+
+<!-- S8 results -->
+<section class="scene" data-s="61" data-e="69.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#results</span></div>
+    <div class="view"><div class="layer" data-kb="1,0,-0.04 1.08,-0.04,-0.12"><img src="shots/07-results.png"><div class="ring" data-at="1.4" data-until="5" style="left:11.6%;top:16.8%;width:77.2%;height:29.5%"></div><div class="ring" data-at="5.2" data-until="8.2" style="left:11.6%;top:48.5%;width:77.2%;height:38%"></div></div></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step4"></span><span class="txt" data-t="cap5"></span></div>
+</section>
+
+<!-- S9 advantages -->
+<section class="scene" data-s="69" data-e="79.2">
+  <div class="eyebrow a" data-at="0.1" data-t="s9eyebrow"></div>
+  <h2 class="a" data-at="0.3" data-t="s9title"></h2>
+  <div class="grid">
+    <div class="card a" data-at="1.0"><div class="ic">01</div><h4 data-t="a1h"></h4><p data-t="a1p"></p></div>
+    <div class="card a" data-at="2.2"><div class="ic">02</div><h4 data-t="a2h"></h4><p data-t="a2p"></p></div>
+    <div class="card a" data-at="3.4"><div class="ic">03</div><h4 data-t="a3h"></h4><p data-t="a3p"></p></div>
+    <div class="card a" data-at="4.6"><div class="ic">04</div><h4 data-t="a4h"></h4><p data-t="a4p"></p></div>
+    <div class="card a" data-at="5.8"><div class="ic">05</div><h4 data-t="a5h"></h4><p data-t="a5p"></p></div>
+    <div class="card a" data-at="7.0"><div class="ic">06</div><h4 data-t="a6h"></h4><p data-t="a6p"></p></div>
+  </div>
+</section>
+
+<!-- S10 research -->
+<section class="scene" data-s="79" data-e="86.2">
+  <div class="eyebrow a" data-at="0.1" data-t="s10eyebrow"></div>
+  <h2 class="a" data-at="0.3" data-t="s10title"></h2>
+  <div class="nums">
+    <div class="num a" data-at="1.0"><div class="big"><span class="w-t">0.70</span> <span style="color:var(--mute);font-size:60px">vs</span> <span class="r-t">0.48</span></div><div class="lab" data-t="n1"></div></div>
+    <div class="num a" data-at="2.2"><div class="big r-t">7.2×</div><div class="lab" data-t="n2"></div></div>
+    <div class="num a" data-at="3.4"><div class="big">+0.06</div><div class="lab" data-t="n3"></div></div>
+  </div>
+  <div class="foot a" data-at="4.4" data-t="s10foot"></div>
+</section>
+
+<!-- S11 call to action -->
+<section class="scene center" data-s="86" data-e="94">
+  <div class="mark a" data-at="0.1" style="margin-bottom:20px"><i class="w" style="width:30px;height:64px"></i><i class="r" style="width:30px;height:64px"></i></div>
+  <h2 class="a" data-at="0.3" data-t="s11title"></h2>
+  <div class="code a" data-at="1.0"><div><span class="p">$</span> git clone https://github.com/jdramirezzu/ragwiki.git</div><div><span class="p">$</span> cd ragwiki && uv sync --extra lab</div><div><span class="p">$</span> uv run ragwiki lab ~/my-lab</div></div>
+  <div class="url a" data-at="1.8">github.com/jdramirezzu/ragwiki</div>
+  <div class="small a" data-at="2.4" data-t="s11small"></div>
+</section>
+
+</div>
+<script>
+const TEXT = {
+  es: {
+    tagline: "¿Búsqueda vectorial o WikiLLM? Construye cualquiera con tus documentos y deja que tus preguntas decidan.",
+    s1eyebrow: "Dos formas de darle tus documentos a un LLM", s1title: "Lo único que cambia es <i>cuándo</i> se hace el trabajo",
+    ragname: "Búsqueda vectorial (RAG)", ragsub: "Busca los párrafos más cercanos en cada pregunta",
+    nq: "pregunta", nclosest: "k párrafos", ncall: "1 llamada al modelo",
+    ragwhen: "Trabaja <b>en cada pregunta</b>. Construirla es gratis.",
+    wikiname: "WikiLLM", wikisub: "Un modelo escribe una wiki enlazada una sola vez",
+    nfiles: "archivos", nwrites: "escribe páginas", nagent: "agente las lee",
+    wikiwhen: "Trabaja <b>al agregar archivos</b>. Cada pregunta lee páginas.",
+    s2title: "¿Cuál le conviene a <span class='w-t'>tus</span> documentos y a <span class='r-t'>tus</span> preguntas?",
+    s2lead: "ragwiki te deja construir una, la otra o las dos, y compararlas con el mismo modelo.",
+    step1: "1 · Archivos", cap1: "Arrastra PDF, Word, PowerPoint o texto. Es <b>gratis</b>: solo se extrae el texto en párrafos citables.",
+    step2: "2 · Construir", cap2: "Búsqueda vectorial con embeddings locales, gratis. La WikiLLM muestra su <b>costo estimado antes de gastar</b>.",
+    cap2b: "Listo: 184 párrafos indexados y una wiki de <b>24 páginas enlazadas</b> desde 5 artículos (0,11 USD).",
+    cap2c: "La herramienta explica <b>en qué se diferencian</b> y cuándo conviene cada una, con datos de un estudio.",
+    step3: "3 · Preguntar", cap3: "Un dato puntual: <b>las dos aciertan</b>; la búsqueda vectorial lo hace con 1 llamada y la WikiLLM con 3.",
+    cap3b: "Una pregunta que une varios artículos: <b>solo la WikiLLM sintetiza</b>, con 7 llamadas y unas 11 veces el costo.",
+    cap4: "Cada cita abre el <b>párrafo exacto de la fuente</b> al lado de la respuesta.",
+    step4: "4 · Resultados", cap5: "Una <b>recomendación explicada</b> para tu corpus, con costos, tiempos y tus veredictos.",
+    s9eyebrow: "Ventajas", s9title: "Decide con evidencia de tus propios archivos",
+    a1h: "Una sola variable", a1p: "El mismo modelo responde con las dos arquitecturas: lo único que cambia es cómo le llega el conocimiento.",
+    a2h: "Costo antes de gastar", a2p: "Estimación previa y registro real de tokens, tiempo y dólares de cada llamada, con tope de gasto.",
+    a3h: "Citas verificadas", a3p: "Una cita solo sobrevive si apunta a un párrafo real; si no hay respuesta, lo dice.",
+    a4h: "Tus archivos se quedan contigo", a4p: "Corre en tu computador; los embeddings son locales. Solo salen las llamadas al modelo.",
+    a5h: "Cualquier modelo", a5p: "Cualquier endpoint compatible con OpenAI: DeepSeek, Gemini, OpenAI u Ollama en local.",
+    a6h: "Código abierto", a6p: "Licencia MIT, en Python, con pruebas e integración continua. La wiki es Markdown que abre en Obsidian.",
+    s10eyebrow: "Nace de una investigación", s10title: "100 artículos de arXiv, 100 preguntas, el mismo modelo",
+    n1: "aciertos de la WikiLLM frente al RAG con 5 párrafos recuperados", n2: "el costo por pregunta de la WikiLLM, más su construcción", n3: "de ventaja con 20 párrafos: ya no es significativa",
+    s10foot: "Proyecto de maestría en IA aplicada, Universidad Icesi. La respuesta depende del corpus: por eso existe ragwiki.",
+    s11title: "Pruébalo con tus documentos", s11small: "Juan Diego Ramírez · Juan David Cruz García · MIT",
+  },
+  en: {
+    tagline: "Vector search or a WikiLLM? Build either one from your documents and let your questions decide.",
+    s1eyebrow: "Two ways to give an LLM your documents", s1title: "What changes is <i>when</i> the work happens",
+    ragname: "Vector search (RAG)", ragsub: "Finds the closest paragraphs at every question",
+    nq: "question", nclosest: "k paragraphs", ncall: "1 model call",
+    ragwhen: "Works <b>at every question</b>. Building it is free.",
+    wikiname: "WikiLLM", wikisub: "A model writes a linked wiki, once",
+    nfiles: "files", nwrites: "writes pages", nagent: "agent reads",
+    wikiwhen: "Works <b>when files are added</b>. Each question reads pages.",
+    s2title: "Which one fits <span class='w-t'>your</span> documents and <span class='r-t'>your</span> questions?",
+    s2lead: "ragwiki lets you build one, the other or both, and compare them with the same model.",
+    step1: "1 · Files", cap1: "Drop PDF, Word, PowerPoint or text. It is <b>free</b>: only the text is extracted into citable paragraphs.",
+    step2: "2 · Build", cap2: "Vector search with local embeddings, free. The WikiLLM shows its <b>estimated cost before spending</b>.",
+    cap2b: "Done: 184 paragraphs indexed and a wiki of <b>24 linked pages</b> from 5 papers ($0.11).",
+    cap2c: "The tool explains <b>how they differ</b> and when each one pays off, with data from a study.",
+    step3: "3 · Ask", cap3: "A single fact: <b>both are right</b>; vector search takes 1 call, the WikiLLM 3.",
+    cap3b: "A question that joins several papers: <b>only the WikiLLM synthesizes</b>, with 7 calls and about 11× the cost.",
+    cap4: "Every citation opens the <b>exact source paragraph</b> beside the answer.",
+    step4: "4 · Results", cap5: "An <b>explained recommendation</b> for your corpus, with costs, times and your verdicts.",
+    s9eyebrow: "Why ragwiki", s9title: "Decide with evidence from your own files",
+    a1h: "One variable", a1p: "The same model answers with both architectures: only the way knowledge reaches it changes.",
+    a2h: "Cost before spending", a2p: "An estimate first, then the real tokens, time and dollars of every call, with a spending cap.",
+    a3h: "Verified citations", a3p: "A citation survives only if it points to a real paragraph; with no answer, it says so.",
+    a4h: "Your files stay yours", a4p: "Runs on your computer; embeddings are local. Only the model calls leave it.",
+    a5h: "Any model", a5p: "Any OpenAI-compatible endpoint: DeepSeek, Gemini, OpenAI or a local Ollama.",
+    a6h: "Open source", a6p: "MIT-licensed Python with tests and CI. The wiki is Markdown that opens in Obsidian.",
+    s10eyebrow: "Born from research", s10title: "100 arXiv papers, 100 questions, the same model",
+    n1: "correct answers, WikiLLM vs RAG with 5 retrieved paragraphs", n2: "the WikiLLM's cost per question, plus building it", n3: "lead with 20 paragraphs: no longer significant",
+    s10foot: "Master's project in applied AI, Universidad Icesi. The answer depends on the corpus: that is why ragwiki exists.",
+    s11title: "Try it on your documents", s11small: "Juan Diego Ramírez · Juan David Cruz García · MIT",
+  },
+};
+const lang = new URLSearchParams(location.search).get("lang") || "es";
+for (const el of document.querySelectorAll("[data-t]")) el.innerHTML = TEXT[lang][el.dataset.t];
+if (lang === "es") for (const el of document.querySelectorAll(".big")) el.innerHTML = el.innerHTML.replace(/(\d)\.(\d)/g, "$1,$2");
+
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const ease = (x) => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const scenes = [...document.querySelectorAll(".scene")].map((el) => ({ el, s: +el.dataset.s, e: +el.dataset.e }));
+
+function render(t) {
+  for (const { el, s, e } of scenes) {
+    const local = t - s, span = e - s;
+    const vis = local < 0 || local > span ? 0 : Math.min(ease(local / 0.5), ease((span - local) / 0.5));
+    el.style.opacity = vis;
+    el.style.display = vis > 0 ? (el.classList.contains("center") ? "flex" : "block") : "none";
+    if (!vis) continue;
+    for (const a of el.querySelectorAll(".a")) {
+      const at = +a.dataset.at || 0;
+      const p = ease((local - at) / 0.6);
+      a.style.opacity = p;
+      a.style.transform = `translateY(${(1 - p) * 26}px)`;
+    }
+    for (const r of el.querySelectorAll(".ring")) {
+      const at = +r.dataset.at, until = +r.dataset.until;
+      r.style.opacity = Math.min(ease((local - at) / 0.4), ease((until - local) / 0.4));
+    }
+    for (const img of el.querySelectorAll("[data-until]:not(.ring)")) {
+      img.style.opacity = 1 - ease((local - +img.dataset.until) / 0.6);
+    }
+    for (const img of el.querySelectorAll("[data-kb]")) {
+      const [a, b] = img.dataset.kb.split(" ").map((v) => v.split(",").map(Number));
+      const p = ease(local / span);
+      const k = a[0] + (b[0] - a[0]) * p, x = a[1] + (b[1] - a[1]) * p, y = a[2] + (b[2] - a[2]) * p;
+      img.style.transform = `translate(${x * 100}%, ${y * 100}%) scale(${k})`;
+    }
+    for (const img of el.querySelectorAll("img[data-pan]")) {
+      const travel = Math.max(0, img.offsetHeight - img.parentElement.clientHeight);
+      const p = ease((local - 1) / (span - 2));
+      img.style.transform = `translateY(${-travel * p * +img.dataset.pan}px)`;
+    }
+  }
+}
+window.render = render;
+window.DURATION = Math.max(...scenes.map((x) => x.e));
+render(0);
+</script>
+</body>
+</html>

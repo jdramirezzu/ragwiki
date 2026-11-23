@@ -4,10 +4,10 @@ import pytest
 from conftest import ScriptedModel
 from files import PNG
 
-from wikinotes.domain import Source
-from wikinotes.extract import number_blocks
-from wikinotes.ingest import IngestError, ingest, split_source
-from wikinotes.models import Image
+from ragwiki.domain import Source
+from ragwiki.extract import number_blocks
+from ragwiki.ingest import IngestError, ingest, split_source
+from ragwiki.models import Image
 
 CELLS = "# Cell biology\n\nThe cell is the unit of life.\n\nMitochondria produce ATP.\n"
 ENERGY = "# Energy\n\nATP stores energy in phosphate bonds.\n"
@@ -303,3 +303,26 @@ def test_the_same_photo_is_not_transcribed_twice(vault, tmp_path):
 
     assert result.skipped
     assert model.calls == []
+
+
+def test_add_source_only_extracts_without_a_model_and_ingest_builds_the_wiki_later(vault, note):
+    from ragwiki.ingest import add_source_only
+
+    path = note("cells.md", CELLS)
+
+    added = add_source_only(vault, path)
+    again = add_source_only(vault, path)
+
+    assert (added.source_id, added.paragraphs, added.skipped) == ("src-cell-biology", 2, False)
+    assert again.skipped
+    assert vault.in_wiki("src-cell-biology") is False
+    assert vault.page_slugs() == []
+    assert vault.original_path("src-cell-biology").name == "src-cell-biology.md"
+
+    result = ingest(vault, ScriptedModel(PLAN, WRITE), path)
+
+    assert result.source_id == "src-cell-biology" and not result.skipped
+    assert result.created == ["cell", "mitochondria"]
+    assert vault.in_wiki("src-cell-biology") is True
+    assert list(vault.sources()) == ["src-cell-biology"]
+    assert ingest(vault, ScriptedModel(), path).skipped

@@ -8,11 +8,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from wikinotes.extract import extract, file_hash, is_photo
-from wikinotes.ingest import MAX_UPDATES, PART_SHARE, SYSTEM, render_source, split_source
-from wikinotes.models import DEFAULT_CONTEXT_TOKENS, estimate_tokens
-from wikinotes.photos import SYSTEM as PHOTO_SYSTEM
-from wikinotes.vault import Vault
+from ragwiki.extract import extract, file_hash, is_photo
+from ragwiki.ingest import MAX_UPDATES, PART_SHARE, SYSTEM, render_source, split_source
+from ragwiki.models import DEFAULT_CONTEXT_TOKENS, estimate_tokens
+from ragwiki.photos import SYSTEM as PHOTO_SYSTEM
+from ragwiki.vault import Vault
 
 # Instructions and JSON template around the source in each prompt.
 PROMPT_OVERHEAD = 200
@@ -60,7 +60,8 @@ def estimate_ingest(
     Prices are in USD per million tokens. Files already in the vault cost nothing. Raises
     the same errors as ingestion for a file that cannot be read.
     """
-    known = {entry["sha256"] for entry in vault.sources().values()}
+    # A source added for retrieval only still costs its wiki pages.
+    known = {e["sha256"] for key, e in vault.sources().items() if vault.in_wiki(key)}
     fixed = estimate_tokens(SYSTEM + vault.schema()) + PROMPT_OVERHEAD
     index = estimate_tokens(vault.index())
     pages = _pages_context(vault)

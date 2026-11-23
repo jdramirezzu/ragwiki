@@ -3,7 +3,7 @@ from conftest import ScriptedModel
 from test_ask import ANSWER, READ, SEARCH
 from test_ingest import CELLS, PLAN, WRITE
 
-from wikinotes.compare import (
+from ragwiki.compare import (
     Ingestion,
     compare,
     load_comparisons,
@@ -13,8 +13,8 @@ from wikinotes.compare import (
     set_verdict,
     summarize,
 )
-from wikinotes.ingest import ingest
-from wikinotes.models import MeteredModel
+from ragwiki.ingest import ingest
+from ragwiki.models import MeteredModel
 
 RAG_ANSWER = {"found": True, "text": "Mitochondria [[src-cell-biology#^p2]]."}
 
@@ -99,13 +99,13 @@ def test_summary_of_nothing_is_empty(vault):
 
 
 def _arm(found, text="", usd=None, tokens=1000):
-    from wikinotes.compare import ArmResult
+    from ragwiki.compare import ArmResult
 
     return ArmResult("x", found, text, [], 1, tokens, 100, 1.0, usd)
 
 
 def test_check_expected_needs_every_key_and_ignores_case_and_accents():
-    from wikinotes.compare import check_expected
+    from ragwiki.compare import check_expected
 
     answer = _arm(True, "Las mitocondrias producen **ATP** [[src-a#^p2]].")
 
@@ -132,7 +132,7 @@ def test_compare_keeps_the_expected_answer_and_scores_each_arm(wiki):
 
 
 def _comparison(wiki_ok, rag_ok, verdict=None, expected="ATP"):
-    from wikinotes.compare import Comparison
+    from ragwiki.compare import Comparison
 
     wiki = _arm(wiki_ok, "ATP" if wiki_ok else "", usd=0.007, tokens=7000)
     rag = _arm(rag_ok, "ATP" if rag_ok else "", usd=0.001, tokens=1000)
@@ -140,7 +140,7 @@ def _comparison(wiki_ok, rag_ok, verdict=None, expected="ATP"):
 
 
 def test_recommend_waits_for_five_evaluated_questions():
-    from wikinotes.compare import recommend
+    from ragwiki.compare import recommend
 
     result = recommend(summarize([_comparison(True, False)] * 4))
 
@@ -149,7 +149,7 @@ def test_recommend_waits_for_five_evaluated_questions():
 
 
 def test_recommend_the_wiki_only_when_it_is_clearly_better():
-    from wikinotes.compare import recommend
+    from ragwiki.compare import recommend
 
     items = [_comparison(True, False)] * 3 + [_comparison(True, True)] * 7
 
@@ -162,7 +162,7 @@ def test_recommend_the_wiki_only_when_it_is_clearly_better():
 
 
 def test_recommend_rag_when_quality_is_similar_or_rag_is_better():
-    from wikinotes.compare import recommend
+    from ragwiki.compare import recommend
 
     similar = recommend(summarize([_comparison(True, True)] * 5))
     better = recommend(summarize([_comparison(False, True)] * 5))
@@ -172,7 +172,7 @@ def test_recommend_rag_when_quality_is_similar_or_rag_is_better():
 
 
 def test_recommend_uses_verdicts_when_there_are_no_expected_answers():
-    from wikinotes.compare import recommend
+    from ragwiki.compare import recommend
 
     items = [_comparison(True, True, verdict="wiki", expected="")] * 4
     items += [_comparison(True, True, verdict="tie", expected="")]
@@ -181,3 +181,14 @@ def test_recommend_uses_verdicts_when_there_are_no_expected_answers():
 
     assert result.choice == "wiki"
     assert "your verdicts on 5 questions" in result.reasons[0]
+
+
+def test_recommend_mentions_the_verdicts_when_expected_answers_decide():
+    from ragwiki.compare import recommend
+
+    items = [_comparison(True, True, verdict="tie")] * 5 + [_comparison(True, True, verdict="wiki")]
+
+    result = recommend(summarize(items))
+
+    assert result.choice == "rag"
+    assert "Your verdicts on 6 questions: wiki preferred 1, RAG 0, ties 5" in result.reasons[1]

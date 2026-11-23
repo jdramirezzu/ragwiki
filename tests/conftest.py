@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from wikinotes.models import Reply
-from wikinotes.vault import Vault
+from ragwiki.models import Reply
+from ragwiki.vault import Vault
 
 
 class ScriptedModel:
@@ -30,7 +30,7 @@ class ScriptedModel:
 def no_real_configuration(monkeypatch):
     """Tests run the same whatever the developer has configured, and never reach a provider."""
     for name in list(os.environ):
-        if name.startswith("WIKINOTES_"):
+        if name.startswith("RAGWIKI_"):
             monkeypatch.delenv(name)
 
 

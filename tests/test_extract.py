@@ -1,14 +1,14 @@
 import pytest
 from files import PNG, make_docx, make_pdf, make_pptx
 
-from wikinotes.extract import (
+from ragwiki.extract import (
     MAX_BLOCK_TOKENS,
     UnreadableSource,
     UnsupportedFormat,
     extract,
     number_blocks,
 )
-from wikinotes.models import estimate_tokens
+from ragwiki.models import estimate_tokens
 
 NOTE = """---
 tags: [biology]

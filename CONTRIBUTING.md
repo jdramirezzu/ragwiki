@@ -1,4 +1,4 @@
-# Contributing to wikinotes
+# Contributing to ragwiki
 
 Thank you for helping people build their own knowledge bases. Small contributions are
 welcome: a typo fix, a clearer error message, or a new file format.

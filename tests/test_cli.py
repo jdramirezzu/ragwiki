@@ -3,8 +3,8 @@ from files import PNG
 from test_ingest import CELLS, PART_1, PART_2, PLAN, SMALL_WINDOW, TRANSCRIPTION, WRITE
 from typer.testing import CliRunner
 
-from wikinotes import __version__
-from wikinotes.cli import app
+from ragwiki import __version__
+from ragwiki.cli import app
 
 runner = CliRunner()
 
@@ -13,7 +13,7 @@ def test_version_flag_prints_the_version_and_exits_cleanly():
     result = runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert result.output.strip() == f"wikinotes {__version__}"
+    assert result.output.strip() == f"ragwiki {__version__}"
 
 
 def test_init_creates_a_vault_and_status_reports_it_empty(tmp_path):
@@ -51,7 +51,7 @@ def make_vault_with_note(tmp_path):
 
 def test_add_ingests_a_file_and_reports_what_changed(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
 
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
     status = runner.invoke(app, ["status", "--vault", str(vault)])
@@ -68,12 +68,12 @@ def test_add_without_a_configured_model_names_the_variable_and_changes_nothing(
     tmp_path, monkeypatch
 ):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.delenv("WIKINOTES_MODEL", raising=False)
+    monkeypatch.delenv("RAGWIKI_MODEL", raising=False)
 
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
 
     assert result.exit_code == 1
-    assert "WIKINOTES_MODEL" in result.output
+    assert "RAGWIKI_MODEL" in result.output
     assert not list((vault / "wiki").iterdir())
 
 
@@ -81,7 +81,7 @@ def test_add_rejects_a_format_it_cannot_read(tmp_path, monkeypatch):
     vault, _ = make_vault_with_note(tmp_path)
     odd = tmp_path / "slides.xyz"
     odd.write_bytes(b"\x00")
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel())
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel())
 
     result = runner.invoke(app, ["add", str(odd), "--vault", str(vault)])
 
@@ -91,22 +91,22 @@ def test_add_rejects_a_format_it_cannot_read(tmp_path, monkeypatch):
 
 def test_add_shows_the_estimate_and_does_not_ask_when_the_price_is_unknown(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
 
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
 
     assert result.exit_code == 0
     assert "Estimate: 1 file(s), about 2 model call(s)" in result.output
-    assert "WIKINOTES_PRICE_INPUT" in result.output
+    assert "RAGWIKI_PRICE_INPUT" in result.output
     assert result.output.index("Estimate:") < result.output.index("added as")
 
 
 def test_add_asks_before_spending_and_stops_on_no(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.setenv("WIKINOTES_PRICE_INPUT", "0.5")
-    monkeypatch.setenv("WIKINOTES_PRICE_OUTPUT", "2")
+    monkeypatch.setenv("RAGWIKI_PRICE_INPUT", "0.5")
+    monkeypatch.setenv("RAGWIKI_PRICE_OUTPUT", "2")
     model = ScriptedModel(PLAN, WRITE)
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: model)
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: model)
 
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)], input="n\n")
 
@@ -121,10 +121,10 @@ def test_add_goes_ahead_on_yes_and_with_the_yes_flag(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
     other = tmp_path / "energy.md"
     other.write_text("# Energy\n\nATP stores energy.\n", encoding="utf-8")
-    monkeypatch.setenv("WIKINOTES_PRICE_INPUT", "0.5")
-    monkeypatch.setenv("WIKINOTES_PRICE_OUTPUT", "2")
+    monkeypatch.setenv("RAGWIKI_PRICE_INPUT", "0.5")
+    monkeypatch.setenv("RAGWIKI_PRICE_OUTPUT", "2")
     monkeypatch.setattr(
-        "wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE, PLAN, WRITE)
+        "ragwiki.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE, PLAN, WRITE)
     )
 
     answered = runner.invoke(app, ["add", str(note), "--vault", str(vault)], input="y\n")
@@ -150,8 +150,8 @@ def test_add_estimate_only_needs_no_model_and_writes_nothing(tmp_path):
 
 def test_add_splits_a_source_larger_than_the_configured_window(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.setenv("WIKINOTES_CONTEXT_TOKENS", str(SMALL_WINDOW))
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(*PART_1, *PART_2))
+    monkeypatch.setenv("RAGWIKI_CONTEXT_TOKENS", str(SMALL_WINDOW))
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel(*PART_1, *PART_2))
 
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
 
@@ -162,13 +162,13 @@ def test_add_splits_a_source_larger_than_the_configured_window(tmp_path, monkeyp
 
 def test_add_rejects_a_context_window_that_is_not_a_positive_number(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.setenv("WIKINOTES_CONTEXT_TOKENS", "big")
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel())
+    monkeypatch.setenv("RAGWIKI_CONTEXT_TOKENS", "big")
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel())
 
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)])
 
     assert result.exit_code == 1
-    assert "WIKINOTES_CONTEXT_TOKENS" in result.output
+    assert "RAGWIKI_CONTEXT_TOKENS" in result.output
     assert not list((vault / "wiki").iterdir())
 
 
@@ -177,7 +177,7 @@ def test_add_transcribes_a_photo_and_says_so(tmp_path, monkeypatch):
     photo = tmp_path / "board.png"
     photo.write_bytes(PNG)
     monkeypatch.setattr(
-        "wikinotes.cli.build_model", lambda _: ScriptedModel(TRANSCRIPTION, PLAN, WRITE)
+        "ragwiki.cli.build_model", lambda _: ScriptedModel(TRANSCRIPTION, PLAN, WRITE)
     )
 
     result = runner.invoke(app, ["add", str(photo), "--vault", str(vault)])
@@ -192,7 +192,7 @@ def test_add_reports_a_damaged_document_and_changes_nothing(tmp_path, monkeypatc
     vault, _ = make_vault_with_note(tmp_path)
     broken = tmp_path / "broken.pdf"
     broken.write_bytes(b"this is not a real document")
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel())
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel())
 
     result = runner.invoke(app, ["add", str(broken), "--vault", str(vault)])
 
@@ -203,13 +203,13 @@ def test_add_reports_a_damaged_document_and_changes_nothing(tmp_path, monkeypatc
 
 def test_ask_prints_the_answer_and_where_it_comes_from(tmp_path, monkeypatch):
     vault, note = make_vault_with_note(tmp_path)
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel(PLAN, WRITE))
     runner.invoke(app, ["add", str(note), "--vault", str(vault)])
     replies = [
         {"action": "read", "pages": ["mitochondria"]},
         {"action": "answer", "found": True, "text": "ATP [[src-cell-biology#^p2]]."},
     ]
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(*replies))
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel(*replies))
 
     result = runner.invoke(app, ["ask", "What produces ATP?", "--vault", str(vault)])
 
@@ -221,7 +221,7 @@ def test_ask_prints_the_answer_and_where_it_comes_from(tmp_path, monkeypatch):
 def test_ask_says_so_when_the_notes_do_not_answer(tmp_path, monkeypatch):
     vault, _ = make_vault_with_note(tmp_path)
     reply = {"action": "answer", "found": False, "text": "The wiki is empty."}
-    monkeypatch.setattr("wikinotes.cli.build_model", lambda _: ScriptedModel(reply))
+    monkeypatch.setattr("ragwiki.cli.build_model", lambda _: ScriptedModel(reply))
 
     result = runner.invoke(app, ["ask", "Anything?", "--vault", str(vault)])
 
@@ -231,9 +231,9 @@ def test_ask_says_so_when_the_notes_do_not_answer(tmp_path, monkeypatch):
 
 def test_status_outside_a_vault_explains_how_to_start(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("WIKINOTES_VAULT", raising=False)
+    monkeypatch.delenv("RAGWIKI_VAULT", raising=False)
 
     result = runner.invoke(app, ["status"])
 
     assert result.exit_code == 1
-    assert "wikinotes init" in result.output
+    assert "ragwiki init" in result.output

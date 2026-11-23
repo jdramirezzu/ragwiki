@@ -8,10 +8,10 @@ from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
-from wikinotes.domain import Block, Page, Source, slugify
-from wikinotes.markdown import join_frontmatter, split_blocks, split_frontmatter
+from ragwiki.domain import Block, Page, Source, slugify
+from ragwiki.markdown import join_frontmatter, split_blocks, split_frontmatter
 
-STATE_DIR = ".wikinotes"
+STATE_DIR = ".ragwiki"
 
 DEFAULT_SCHEMA = """# Wiki conventions
 
@@ -26,9 +26,7 @@ request.
   newer, and cite each.
 """
 
-_GITIGNORE = (
-    ".wikinotes/calls.jsonl\n.wikinotes/uploads/\n.wikinotes/embeddings/\n.obsidian/workspace*\n"
-)
+_GITIGNORE = ".ragwiki/calls.jsonl\n.ragwiki/uploads/\n.ragwiki/embeddings/\n.obsidian/workspace*\n"
 _ANCHOR_ONLY = re.compile(r"^\^(p\d+)$")
 _ANCHOR_TRAILING = re.compile(r"^(.*\S) \^(p\d+)$", re.DOTALL)
 # Obsidian needs the block id on its own line after lists, quotes, tables and code.
@@ -49,7 +47,7 @@ class Vault:
     def create(cls, root: Path) -> "Vault":
         root = Path(root)
         if (root / STATE_DIR).exists():
-            raise VaultError(f"{root} is already a wikinotes vault")
+            raise VaultError(f"{root} is already a ragwiki vault")
         for name in ("sources", "extracted", "wiki", STATE_DIR):
             (root / name).mkdir(parents=True, exist_ok=True)
         vault = cls(root)
@@ -61,7 +59,7 @@ class Vault:
         vault.rebuild_index()
         if shutil.which("git") and not (root / ".git").exists():
             vault._git("init", "-q")
-        vault.commit("init: new wikinotes vault")
+        vault.commit("init: new ragwiki vault")
         return vault
 
     @classmethod
@@ -70,7 +68,7 @@ class Vault:
         for folder in (start, *start.parents):
             if (folder / STATE_DIR / "state.json").is_file():
                 return cls(folder)
-        raise VaultError("No wikinotes vault found here. Run `wikinotes init` first.")
+        raise VaultError("No ragwiki vault found here. Run `ragwiki init` first.")
 
     # --- sources ---------------------------------------------------------------------
 
@@ -90,7 +88,23 @@ class Vault:
             candidate = f"{base}-{number}"
         return candidate
 
-    def add_source(self, source: Source, original: Path) -> Source:
+    def in_wiki(self, source_id: str) -> bool:
+        """Whether the wiki was built from this source. Older vaults always built it."""
+        return bool(self.sources()[source_id].get("wiki", True))
+
+    def mark_in_wiki(self, source_id: str) -> None:
+        state = self._read_state()
+        state["sources"][source_id]["wiki"] = True
+        self._write_state(state)
+
+    def original_path(self, source_id: str) -> Path:
+        """The copy of the original file kept in `sources/`."""
+        matches = sorted((self.root / "sources").glob(f"{source_id}.*"))
+        if not matches:
+            raise VaultError(f"The original file of {source_id} is missing")
+        return matches[0]
+
+    def add_source(self, source: Source, original: Path, in_wiki: bool = True) -> Source:
         stored = source if source.id else replace(source, id=self.new_id(source.title))
         original = Path(original)
         shutil.copyfile(original, self.root / "sources" / f"{stored.id}{original.suffix.lower()}")
@@ -109,6 +123,7 @@ class Vault:
             "original": stored.original,
             "sha256": stored.sha256,
             "added": date.today().isoformat(),
+            "wiki": in_wiki,
         }
         self._write_state(state)
         return stored
@@ -193,7 +208,7 @@ class Vault:
             return
         identity: list[str] = []
         if not self._git("config", "user.name").stdout.strip():
-            identity = ["-c", "user.name=wikinotes", "-c", "user.email=wikinotes@localhost"]
+            identity = ["-c", "user.name=ragwiki", "-c", "user.email=ragwiki@localhost"]
         self._git(*identity, "commit", "-q", "-m", message, check=True)
 
     # --- internals -------------------------------------------------------------------

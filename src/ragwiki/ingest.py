@@ -16,13 +16,13 @@ from datetime import date
 from pathlib import Path
 from typing import TypeVar
 
-from wikinotes.domain import Block, Page, Source, slugify
-from wikinotes.extract import extract, file_hash
-from wikinotes.models import DEFAULT_CONTEXT_TOKENS, Image, Model, estimate_tokens, extract_json
-from wikinotes.photos import PROMPT as PHOTO_PROMPT
-from wikinotes.photos import SYSTEM as PHOTO_SYSTEM
-from wikinotes.photos import load_image, parse_transcription
-from wikinotes.vault import Vault
+from ragwiki.domain import Block, Page, Source, slugify
+from ragwiki.extract import extract, file_hash, is_photo
+from ragwiki.models import DEFAULT_CONTEXT_TOKENS, Image, Model, estimate_tokens, extract_json
+from ragwiki.photos import PROMPT as PHOTO_PROMPT
+from ragwiki.photos import SYSTEM as PHOTO_SYSTEM
+from ragwiki.photos import load_image, parse_transcription
+from ragwiki.vault import Vault
 
 MAX_UPDATES = 6
 MAX_CREATES = 4
@@ -328,9 +328,13 @@ def ingest(
     """
     path = Path(path)
     sha256 = file_hash(path)
+    known_source: Source | None = None
     for source_id, entry in vault.sources().items():
         if entry["sha256"] == sha256:
-            return IngestResult(source_id=source_id, skipped=True)
+            if vault.in_wiki(source_id):
+                return IngestResult(source_id=source_id, skipped=True)
+            # Added for retrieval only: the wiki is built from the extracted text.
+            known_source = vault.load_source(source_id)
 
     def report(part: int, parts: int, stage: str) -> None:
         if on_progress is not None:
@@ -341,8 +345,11 @@ def ingest(
         image = load_image(photo)
         return ask_json(model, PHOTO_SYSTEM, PHOTO_PROMPT, parse_transcription, images=(image,))
 
-    source = extract(path, read_image=transcribe)
-    source = replace(source, id=vault.new_id(source.title))
+    if known_source is None:
+        source = extract(path, read_image=transcribe)
+        source = replace(source, id=vault.new_id(source.title))
+    else:
+        source = known_source
     system = SYSTEM + vault.schema()
     paragraphs = Paragraphs(vault, extra=source)
     draft = _Draft(vault)
@@ -367,7 +374,10 @@ def ingest(
         draft.pending.update({page.slug: page for page in pages})
 
     # Every part is valid: only now does the vault change.
-    vault.add_source(source, path)
+    if known_source is None:
+        vault.add_source(source, path)
+    else:
+        vault.mark_in_wiki(source.id)
     for page in draft.pending.values():
         vault.write_page(page)
     vault.rebuild_index()
@@ -383,3 +393,32 @@ def ingest(
     )
     vault.commit(f"add: {source.title}")
     return result
+
+
+@dataclass(frozen=True)
+class Added:
+    source_id: str
+    title: str
+    paragraphs: int
+    skipped: bool = False
+
+
+def add_source_only(vault: Vault, path: Path) -> Added:
+    """Extract a file into the vault without building the wiki. No model call, no cost.
+
+    Retrieval (RAG) can use the source at once; `ingest` builds the wiki from it later.
+    Photos need a model to be transcribed, so they go through `ingest`.
+    """
+    path = Path(path)
+    sha256 = file_hash(path)
+    for source_id, entry in vault.sources().items():
+        if entry["sha256"] == sha256:
+            source = vault.load_source(source_id)
+            return Added(source_id, source.title, len(source.paragraphs), skipped=True)
+    if is_photo(path):
+        raise IngestError(f"{path.name} is a photo: it needs a model to be read. Use ingest.")
+    source = extract(path)
+    source = vault.add_source(replace(source, id=vault.new_id(source.title)), path, in_wiki=False)
+    vault.append_log(f"added [[{source.id}]] ({source.title}) without building the wiki")
+    vault.commit(f"add source: {source.title}")
+    return Added(source.id, source.title, len(source.paragraphs))

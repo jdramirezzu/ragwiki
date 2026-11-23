@@ -7,9 +7,9 @@ import zipfile
 from collections.abc import Callable
 from pathlib import Path
 
-from wikinotes.domain import Block, Source
-from wikinotes.markdown import is_heading, split_blocks, split_frontmatter
-from wikinotes.models import estimate_tokens
+from ragwiki.domain import Block, Source
+from ragwiki.markdown import is_heading, split_blocks, split_frontmatter
+from ragwiki.models import estimate_tokens
 
 # A citable block larger than this is cut into smaller ones. Converters can return a whole
 # spreadsheet or a page without blank lines as one block, which no model could take in and
@@ -173,7 +173,7 @@ def extract(path: Path, read_image: Callable[[Path], str] | None = None) -> Sour
         if read_image is None:
             raise UnreadableSource(
                 f"{path.name} is a photo: it needs a model to be transcribed. Add it with "
-                "`wikinotes add`."
+                "`ragwiki add`."
             )
         return source_from_markdown(path, read_image(path))
     extractor = EXTRACTORS.get(path.suffix.lower())

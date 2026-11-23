@@ -6,10 +6,10 @@ cannot answer.
 
 ## Before you start
 
-- wikinotes installed from a clone (`uv sync`), and a model configured as in the
+- ragwiki installed from a clone (`uv sync`), and a model configured as in the
   [README](../README.md#quick-start).
-- Optional but recommended: set `WIKINOTES_PRICE_INPUT` and `WIKINOTES_PRICE_OUTPUT` so you
-  see prices, and `WIKINOTES_MAX_USD=0.10` as a safety cap.
+- Optional but recommended: set `RAGWIKI_PRICE_INPUT` and `RAGWIKI_PRICE_OUTPUT` so you
+  see prices, and `RAGWIKI_MAX_USD=0.10` as a safety cap.
 
 ## Steps
 
@@ -18,30 +18,30 @@ Run every command from the repository folder.
 1. Create a vault outside the repository:
 
    ```bash
-   uv run wikinotes init ~/wikinotes-demo
+   uv run ragwiki init ~/ragwiki-demo
    ```
 
 2. See what adding the notes would cost. Nothing is sent to the model yet:
 
    ```bash
-   uv run wikinotes add examples/cell-biology/*.md --vault ~/wikinotes-demo --estimate
+   uv run ragwiki add examples/cell-biology/*.md --vault ~/ragwiki-demo --estimate
    ```
 
 3. Add the notes. Each file reports the pages it created or updated:
 
    ```bash
-   uv run wikinotes add examples/cell-biology/*.md --vault ~/wikinotes-demo
+   uv run ragwiki add examples/cell-biology/*.md --vault ~/ragwiki-demo
    ```
 
 4. Ask the three questions:
 
    ```bash
-   uv run wikinotes ask "What do mitochondria do?" --vault ~/wikinotes-demo
-   uv run wikinotes ask "In a plant, where does the glucose used in cellular respiration come from?" --vault ~/wikinotes-demo
-   uv run wikinotes ask "How many chromosomes does a human cell have?" --vault ~/wikinotes-demo
+   uv run ragwiki ask "What do mitochondria do?" --vault ~/ragwiki-demo
+   uv run ragwiki ask "In a plant, where does the glucose used in cellular respiration come from?" --vault ~/ragwiki-demo
+   uv run ragwiki ask "How many chromosomes does a human cell have?" --vault ~/ragwiki-demo
    ```
 
-5. Open `~/wikinotes-demo` in [Obsidian](https://obsidian.md) and click a citation: it
+5. Open `~/ragwiki-demo` in [Obsidian](https://obsidian.md) and click a citation: it
    opens the exact paragraph of the note it came from.
 
 ## What to check
@@ -56,14 +56,14 @@ Run every command from the repository folder.
 | Any answer | Every citation listed under `Sources:` shows the paragraph it points to |
 
 If question 3 gets an answer, or a citation does not match its claim, that is a bug worth
-[reporting](https://github.com/jdramirezzu/wikinotes/issues): include the model you used.
+[reporting](https://github.com/jdramirezzu/ragwiki/issues): include the model you used.
 
 ## Trying other formats
 
 The same commands accept PDF, Word, PowerPoint and photos of notes. A photo needs a
-model that can see images; see the README for `WIKINOTES_VISION_MODEL`.
+model that can see images; see the README for `RAGWIKI_VISION_MODEL`.
 
 ## Undo
 
-The vault is a Git repository and every `add` is one commit, so `git -C ~/wikinotes-demo
+The vault is a Git repository and every `add` is one commit, so `git -C ~/ragwiki-demo
 revert HEAD` undoes the last one. Delete the folder to start over.

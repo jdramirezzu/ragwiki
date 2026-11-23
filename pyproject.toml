@@ -1,7 +1,7 @@
 [project]
-name = "wikinotes"
+name = "ragwiki"
 version = "0.1.0"
-description = "Turn your study material into an interlinked, LLM-maintained Markdown wiki."
+description = "Build a vector search (RAG) or an LLM-maintained wiki from your documents, and find out which one they need."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -15,18 +15,24 @@ dependencies = [
 ]
 
 [project.scripts]
-wikinotes = "wikinotes.cli:app"
+ragwiki = "ragwiki.cli:app"
 
 [project.optional-dependencies]
 lab = [
-    "streamlit>=1.40",
+    "fastapi>=0.115",
+    "fastembed>=0.4",
+    "python-multipart>=0.0.9",
+    "uvicorn>=0.30",
 ]
 
 [dependency-groups]
 dev = [
+    "fastapi>=0.115",
+    "httpx>=0.27",
     "pytest>=8.0",
+    "python-multipart>=0.0.9",
     "ruff>=0.6",
-    "streamlit>=1.40",
+    "uvicorn>=0.30",
 ]
 
 [build-system]

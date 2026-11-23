@@ -8,6 +8,8 @@ Cada afirmación enlaza al párrafo del que salió.
 
 [Read in English](README.md)
 
+Un video introductorio de 90 segundos se genera con código en [`docs/video`](docs/video/README.md).
+
 > Estado: desarrollo inicial, construido de forma abierta a partir de un proyecto de
 > investigación de maestría. La [hoja de ruta](#hoja-de-ruta) indica qué funciona hoy.
 

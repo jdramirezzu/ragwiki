@@ -17,10 +17,16 @@ dependencies = [
 [project.scripts]
 wikinotes = "wikinotes.cli:app"
 
+[project.optional-dependencies]
+lab = [
+    "streamlit>=1.40",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
+    "streamlit>=1.40",
 ]
 
 [build-system]

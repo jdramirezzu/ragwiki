@@ -26,7 +26,9 @@ request.
   newer, and cite each.
 """
 
-_GITIGNORE = ".wikinotes/calls.jsonl\n.obsidian/workspace*\n"
+_GITIGNORE = (
+    ".wikinotes/calls.jsonl\n.wikinotes/uploads/\n.wikinotes/embeddings/\n.obsidian/workspace*\n"
+)
 _ANCHOR_ONLY = re.compile(r"^\^(p\d+)$")
 _ANCHOR_TRAILING = re.compile(r"^(.*\S) \^(p\d+)$", re.DOTALL)
 # Obsidian needs the block id on its own line after lists, quotes, tables and code.

@@ -217,3 +217,29 @@ def status(vault: VaultOption = None) -> None:
     typer.echo(f"Vault: {opened.root}")
     typer.echo(f"Sources: {len(opened.sources())}")
     typer.echo(f"Pages: {len(opened.page_slugs())}")
+
+
+@app.command()
+def lab(
+    folder: Annotated[
+        Path | None,
+        typer.Argument(help="Vault folder to open or create. Defaults to ~/wikinotes-lab."),
+    ] = None,
+    port: Annotated[int, typer.Option(help="Port of the local web page.")] = 8501,
+) -> None:
+    """Open the lab: compare a wiki and RAG on your own files in the browser."""
+    import importlib.util
+    import subprocess
+    import sys
+
+    if importlib.util.find_spec("streamlit") is None:
+        raise _fail(
+            "The lab needs Streamlit. Install it with `uv sync --extra lab` "
+            "or `pip install 'wikinotes[lab]'`."
+        )
+    script = Path(__file__).with_name("lab_app.py")
+    command = [sys.executable, "-m", "streamlit", "run", str(script)]
+    command += ["--server.port", str(port), "--browser.gatherUsageStats", "false"]
+    if folder is not None:
+        command += ["--", str(folder.expanduser().resolve())]
+    raise typer.Exit(code=subprocess.call(command))

@@ -73,23 +73,47 @@ length, and the real cost of each call is recorded in `.wikinotes/calls.jsonl`.
 A source larger than the model's context window is split into parts, and nothing is written
 unless every part succeeds. Paragraphs are never cut, so citations stay exact.
 
+## Compare a wiki and RAG on your files
+
+Not sure a wiki is worth it for your documents? The lab repeats the study's experiment on
+your own material: the same model answers your questions twice, once from the wiki and once
+from paragraphs retrieved from your files (RAG), and shows both answers side by side.
+
+```bash
+uv sync --extra lab
+uv run wikinotes lab ~/my-lab
+```
+
+1. **Sources.** Choose PDFs, Word or PowerPoint files, or plain text (`.txt`, `.md`). You see
+   the estimated cost of building the wiki before anything is spent.
+2. **Compare.** Type the questions you care about, one per line. Optionally add `|` and the
+   expected answer as key terms (`What produces ATP? | ATP, mitochondria`), or `none` when
+   your files do not answer it. Each answer shows its citations, tokens, time and cost.
+3. **Results.** Judge each pair of answers, download everything as CSV or JSONL, and read
+   the recommendation: the wiki is suggested only when it answers clearly better (a gap of
+   at least 0.10 over five or more evaluated questions); otherwise RAG, which is cheaper.
+
+RAG retrieval is lexical (BM25) by default: offline and free. Set
+`WIKINOTES_EMBEDDING_MODEL` to use embeddings from your provider instead. The study used
+embeddings with 5 retrieved paragraphs; try several values of `k` before deciding.
+
 ## Why a wiki and not just search
 
 Most "chat with your documents" tools search your files again for every question. wikinotes
 instead writes knowledge down once, as pages that connect ideas across your sources, and
 keeps those pages up to date as you add material.
 
-This design comes from a master's research project that compared both approaches on the
-same model and the same documents:
+This design comes from a [master's research project](https://github.com/1KVueltasAlCampo/llm-knowledge-management-wiki-agent) that compared both
+approaches with the same model, the same 100 scientific papers and the same 100 questions:
 
 | Finding | What wikinotes does about it |
 |---|---|
-| The wiki answered more questions correctly (0.78 vs 0.54), and far more when the answer needed several sources (1.00 vs 0.42) | The wiki is the core of the product |
-| For a single fact from one source both were about even, and search cost about a tenth | Search over the original text is the fallback for precise lookups |
-| The wiki sometimes answered when it should have said "not in your notes", and kept outdated values | Explicit abstention, citations verified by code, and a `lint` command |
+| The wiki answered more questions correctly (0.70 vs 0.48 with 5 retrieved paragraphs), and its lead was largest when the answer joined several papers | The wiki is the core of the product |
+| Each wiki question cost 7.2× and took 4.1× as long, plus a one-time cost to build the wiki. Giving RAG 20 paragraphs shrank the lead to +0.06, no longer significant | The [lab](#compare-a-wiki-and-rag-on-your-files) lets you check which one pays off for your files |
+| The wiki kept what it learned but captured 63–80 % of what it could, and did not retire outdated values | Explicit abstention, citations verified by code, and a planned `lint` command |
 
-Those numbers come from one experiment on 50 scientific papers. They motivated the design;
-they are not a guarantee for your notes.
+Those numbers come from one experiment on arXiv papers. They motivated the design; they are
+not a guarantee for your notes.
 
 ## How it works
 
@@ -121,6 +145,7 @@ links and the graph work, and a citation takes you to the exact source paragraph
 | M0 | Repository, packaging, CI | Done |
 | M1 | Vault, Markdown ingestion, questions with verified citations | Done |
 | M2 | PDF, office files, photos of handwritten notes, long sources, cost estimate | Done |
+| Lab | Compare a wiki and RAG on your own files, with a recommendation | Done |
 | M3 | Source-text search fallback, `lint`, saving answers as pages | Planned |
 | Later | Graphical interface, flashcards, shared wikis | Ideas welcome |
 
@@ -128,7 +153,7 @@ links and the graph work, and a citation takes you to the exact source paragraph
 
 Contributions of any size are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
-wikinotes has no graphical interface yet. If you design or build interfaces, read
+The lab is the first graphical interface. If you design or build interfaces, read
 [Designing an interface for wikinotes](docs/interface.md).
 
 ## License

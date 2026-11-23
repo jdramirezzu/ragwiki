@@ -7,6 +7,7 @@ Everything an application needs is importable from here. The command line in
 __version__ = "0.1.0"
 
 from wikinotes.ask import Answer, CitedParagraph, ask, cited_paragraph
+from wikinotes.compare import Comparison, Recommendation, compare, recommend, summarize
 from wikinotes.domain import Block, Page, Source
 from wikinotes.estimate import Estimate, estimate_ingest
 from wikinotes.extract import UnreadableSource, UnsupportedFormat
@@ -22,9 +23,17 @@ from wikinotes.models import (
     Reply,
     metered_from_env,
 )
+from wikinotes.rag import RagAnswer, ask_rag
 from wikinotes.vault import Vault, VaultError
 
 __all__ = [
+    "summarize",
+    "recommend",
+    "compare",
+    "ask_rag",
+    "Recommendation",
+    "RagAnswer",
+    "Comparison",
     "Answer",
     "Block",
     "BudgetExceeded",

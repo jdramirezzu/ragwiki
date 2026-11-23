@@ -77,23 +77,50 @@ Una fuente más grande que la ventana de contexto del modelo se divide en partes
 escribe nada a menos que todas las partes salgan bien. Los párrafos nunca se cortan, así
 que las citas siguen siendo exactas.
 
+## Compara una wiki y un RAG con tus archivos
+
+¿No sabes si una wiki vale la pena para tus documentos? El laboratorio repite el experimento
+del estudio con tu propio material: el mismo modelo responde tus preguntas dos veces, una
+desde la wiki y otra desde párrafos recuperados de tus archivos (RAG), y muestra las dos
+respuestas lado a lado.
+
+```bash
+uv sync --extra lab
+uv run wikinotes lab ~/mi-laboratorio
+```
+
+1. **Fuentes.** Elige PDF, archivos de Word o PowerPoint, o texto plano (`.txt`, `.md`). Ves
+   el costo estimado de construir la wiki antes de gastar.
+2. **Comparar.** Escribe las preguntas que te importan, una por línea. Si quieres, agrega `|`
+   y la respuesta esperada como términos clave (`¿Qué produce ATP? | ATP, mitocondria`), o
+   `none` cuando tus archivos no la responden. Cada respuesta muestra sus citas, tokens,
+   tiempo y costo.
+3. **Resultados.** Juzga cada par de respuestas, descarga todo en CSV o JSONL y lee la
+   recomendación: la wiki se sugiere solo cuando responde claramente mejor (una diferencia
+   de al menos 0,10 con cinco o más preguntas evaluadas); si no, el RAG, que cuesta menos.
+
+La recuperación del RAG es léxica (BM25) por defecto: sin conexión y gratis. Define
+`WIKINOTES_EMBEDDING_MODEL` para usar embeddings de tu proveedor. El estudio usó embeddings
+con 5 párrafos recuperados; prueba varios valores de `k` antes de decidir.
+
 ## Por qué una wiki y no solo búsqueda
 
 La mayoría de las herramientas para "conversar con tus documentos" vuelven a buscar en tus
 archivos con cada pregunta. wikinotes escribe el conocimiento una sola vez, en páginas que
 conectan ideas entre tus fuentes, y las mantiene al día cuando agregas material.
 
-El diseño nace de un proyecto de investigación de maestría que comparó los dos enfoques con
-el mismo modelo y los mismos documentos:
+El diseño nace de un [proyecto de investigación de maestría](https://github.com/1KVueltasAlCampo/llm-knowledge-management-wiki-agent) que comparó los
+dos enfoques con el mismo modelo, los mismos 100 artículos científicos y las mismas 100
+preguntas:
 
 | Hallazgo | Qué hace wikinotes |
 |---|---|
-| La wiki respondió bien más preguntas (0.78 frente a 0.54), y muchas más cuando la respuesta necesitaba varias fuentes (1.00 frente a 0.42) | La wiki es el centro del producto |
-| Para un dato puntual de una sola fuente quedaron casi iguales, y la búsqueda costó cerca de una décima parte | La búsqueda sobre el texto original es el respaldo para datos precisos |
-| La wiki a veces respondió cuando debía decir "no está en tus notas" y conservó valores desactualizados | Abstención explícita, citas verificadas por código y un comando `lint` |
+| La wiki respondió bien más preguntas (0,70 frente a 0,48 con 5 párrafos recuperados), y su ventaja fue mayor cuando la respuesta unía varios artículos | La wiki es el centro del producto |
+| Cada pregunta a la wiki costó 7,2 veces más y tardó 4,1 veces más, además de un costo único para construirla. Con 20 párrafos para el RAG la ventaja bajó a +0,06, sin significancia | El [laboratorio](#compara-una-wiki-y-un-rag-con-tus-archivos) te deja comprobar cuál conviene con tus archivos |
+| La wiki conservó lo aprendido, pero captó del 63 % al 80 % de lo que podía y no retiró valores desactualizados | Abstención explícita, citas verificadas por código y un comando `lint` planeado |
 
-Esas cifras salen de un experimento con 50 artículos científicos. Motivaron el diseño; no
-son una garantía para tus apuntes.
+Esas cifras salen de un experimento con artículos de arXiv. Motivaron el diseño; no son una
+garantía para tus apuntes.
 
 ## Cómo funciona
 
@@ -128,6 +155,7 @@ editor: los enlaces y el grafo funcionan, y una cita te lleva al párrafo exacto
 | M0 | Repositorio, empaquetado, CI | Hecho |
 | M1 | Carpeta, ingesta de Markdown, preguntas con citas verificadas | Hecho |
 | M2 | PDF, archivos de ofimática, fotos de apuntes a mano, fuentes largas, estimación de costo | Hecho |
+| Laboratorio | Comparar una wiki y un RAG con tus archivos, con una recomendación | Hecho |
 | M3 | Respaldo de búsqueda en el texto original, `lint`, guardar respuestas como páginas | Planeado |
 | Después | Interfaz gráfica, tarjetas de estudio, wikis compartidas | Se reciben ideas |
 
@@ -135,7 +163,7 @@ editor: los enlaces y el grafo funcionan, y una cita te lleva al párrafo exacto
 
 Toda contribución es bienvenida. Empieza por [CONTRIBUTING.md](CONTRIBUTING.md).
 
-wikinotes aún no tiene interfaz gráfica. Si diseñas o construyes interfaces, lee
+El laboratorio es la primera interfaz gráfica. Si diseñas o construyes interfaces, lee
 [Designing an interface for wikinotes](docs/interface.md) (en inglés).
 
 ## Licencia

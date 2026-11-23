@@ -92,7 +92,7 @@ kept in memory, never written to disk) or with the `WIKINOTES_*` variables above
    the estimated cost of building the wiki before anything is spent.
 2. **Compare.** Type the questions you care about, one per line. Optionally add `|` and the
    expected answer as key terms (`What produces ATP? | ATP, mitochondria`), or `none` when
-   your files do not answer it. Each answer shows its citations, tokens, time and cost.
+   your files do not answer it. Each answer shows its citations, tokens, time and cost;
    click a citation to read the source paragraph beside the answer.
 3. **Results.** Judge each pair of answers, download everything as CSV or JSONL, and read
    the recommendation: the wiki is suggested only when it answers clearly better (a gap of

@@ -33,6 +33,12 @@ CLIPS = [
     (79.3, 6.6),
     (86.3, 7.2),
 ]
+# Laptop microphones pick up a low rumble that eats headroom: cut it, reduce the hiss and
+# even out the voice before the levels are matched.
+VOICE_CLEANUP = (
+    "highpass=f=100:poles=2,highpass=f=100:poles=2,afftdn=nf=-30,"
+    "acompressor=threshold=-20dB:ratio=3:attack=5:release=120"
+)
 AUDIO = (".wav", ".m4a", ".mp3", ".ogg", ".flac", ".aac", ".webm", ".opus")
 
 
@@ -61,6 +67,7 @@ def main() -> None:
     parser.add_argument("--voice", type=Path, help="folder with s01..s13 audio clips")
     parser.add_argument("--music", type=Path, help="music file; generated when missing")
     parser.add_argument("--music-volume", type=float, default=0.55)
+    parser.add_argument("--declip", action="store_true", help="repair clipped takes first")
     args = parser.parse_args()
 
     total = duration(args.video)
@@ -90,9 +97,10 @@ def main() -> None:
         for index, (number, path) in enumerate(clips, start=2):
             start = int(CLIPS[number - 1][0] * 1000)
             inputs += ["-i", str(path)]
+            repair = "adeclip," if args.declip else ""
             filters.append(
-                f"[{index}:a]aresample=48000,aformat=channel_layouts=stereo,"
-                f"highpass=f=80,adelay={start}|{start},apad=whole_dur={total}[v{number}]"
+                f"[{index}:a]{repair}aresample=48000,aformat=channel_layouts=stereo,"
+                f"{VOICE_CLEANUP},adelay={start}|{start},apad=whole_dur={total}[v{number}]"
             )
             labels.append(f"[v{number}]")
         filters.append(

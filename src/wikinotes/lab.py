@@ -1,6 +1,6 @@
 """Helpers for the comparison lab, kept apart from Streamlit so they can be tested.
 
-The lab itself is `lab_app.py`, a Streamlit script started by `wikinotes lab`.
+The lab itself is `server.py` and the page in `web/`, started by `wikinotes lab`.
 """
 
 import csv

@@ -1,6 +1,3 @@
-import json
-import sys
-
 import pytest
 from conftest import ScriptedModel
 from test_ask import ANSWER, READ, SEARCH
@@ -48,41 +45,16 @@ def test_rows_and_csv_flatten_each_comparison(vault, note):
     assert len(csv_text.splitlines()) == 2
 
 
-def test_lab_command_starts_streamlit_with_the_folder(monkeypatch, tmp_path):
+def test_lab_command_starts_the_server_with_the_folder(monkeypatch, tmp_path):
     seen = {}
-    monkeypatch.setattr("subprocess.call", lambda command: seen.setdefault("cmd", command) and 0)
-
-    result = CliRunner().invoke(cli.app, ["lab", str(tmp_path), "--port", "9000"])
-
-    assert result.exit_code == 0
-    command = seen["cmd"]
-    assert command[:4] == [sys.executable, "-m", "streamlit", "run"]
-    assert command[4].endswith("lab_app.py")
-    assert "9000" in command
-    assert command[-2:] == ["--", str(tmp_path.resolve())]
-
-
-def test_lab_page_renders_without_a_model(vault, note, monkeypatch):
-    pytest.importorskip("streamlit")
-    from streamlit.testing.v1 import AppTest
-
-    ingest(vault, ScriptedModel(PLAN, WRITE), note("cells.md", CELLS))
-    save_comparison(vault, compare(vault, ScriptedModel(SEARCH, READ, ANSWER, RAG_ANSWER), "ATP?"))
-    monkeypatch.setenv("WIKINOTES_VAULT", str(vault.root))
-    monkeypatch.setattr(sys, "argv", ["lab_app.py"])
-
-    app = AppTest.from_file(str(cli.Path(cli.__file__).with_name("lab_app.py")), default_timeout=30)
-    app.run()
-
-    assert not app.exception
-    assert "No model configured" in app.warning[0].value
-    assert [tab.label for tab in app.tabs] == ["1 · Sources", "2 · Compare", "3 · Results"]
-    assert any("ATP?" in item.value for item in app.markdown)
-    assert any("1 questions, 0 judged" in item.value for item in app.subheader)
-    assert any("Not enough evidence yet" in item.value for item in app.info)
-    assert (
-        json.loads((vault.root / ".wikinotes" / "comparisons.jsonl").read_text().splitlines()[0])[
-            "verdict"
-        ]
-        is None
+    monkeypatch.setattr(
+        "wikinotes.server.run",
+        lambda folder, port, open_browser: seen.update(
+            folder=folder, port=port, open_browser=open_browser
+        ),
     )
+
+    result = CliRunner().invoke(cli.app, ["lab", str(tmp_path), "--port", "9000", "--no-browser"])
+
+    assert result.exit_code == 0, result.output
+    assert seen == {"folder": tmp_path.resolve(), "port": 9000, "open_browser": False}

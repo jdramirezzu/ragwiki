@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wikinotes lab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23171a2b'/%3E%3Cpath d='M8 10h7v12H8zM17 10h7v12h-7z' fill='none' stroke='%23f4efe4' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"><i class="w"></i><i class="r"></i></span>
+    <span>wikinotes <b>lab</b></span>
+  </div>
+  <div class="status">
+    <button class="chip" id="vaultChip" type="button" title="Change vault folder">No vault</button>
+    <button class="chip" id="modelChip" type="button" title="Model settings">No model</button>
+    <span class="chip quiet" id="spendChip" hidden></span>
+  </div>
+</header>
+
+<main>
+  <!-- first run: choose a vault -->
+  <section id="welcome" class="welcome" hidden>
+    <p class="eyebrow">Wiki or RAG?</p>
+    <h1>Find out which one your documents need.</h1>
+    <p class="lede">The same model answers your questions twice: from a wiki it wrote when you added
+      the files, and from paragraphs retrieved for each question. You compare answers, citations,
+      cost and time, and get a recommendation.</p>
+    <form id="vaultForm" class="vaultform">
+      <label for="folder">Folder for this experiment</label>
+      <div class="row">
+        <input id="folder" name="folder" required autocomplete="off" spellcheck="false">
+        <button class="btn primary" type="submit">Open or create</button>
+      </div>
+      <p class="hint">A folder of plain Markdown. It opens in Obsidian or any editor, and nothing leaves your computer except the model calls.</p>
+    </form>
+  </section>
+
+  <!-- the three steps -->
+  <section id="workspace" hidden>
+    <nav class="steps" role="tablist" aria-label="Steps">
+      <button role="tab" id="tab-sources" aria-controls="sources" aria-selected="true"><span>1</span>Sources <em id="countSources"></em></button>
+      <button role="tab" id="tab-compare" aria-controls="compare" aria-selected="false"><span>2</span>Compare <em id="countCompare"></em></button>
+      <button role="tab" id="tab-results" aria-controls="results" aria-selected="false"><span>3</span>Results</button>
+    </nav>
+
+    <!-- 1 · sources -->
+    <div role="tabpanel" id="sources" class="panel" aria-labelledby="tab-sources">
+      <div class="grid2">
+        <div>
+          <h2>Add your files</h2>
+          <p class="sub">PDF with a text layer, Word (.docx), PowerPoint (.pptx) and plain text (.txt, .md). Both arms read the same paragraphs extracted from them.</p>
+          <label class="drop" id="drop" tabindex="0">
+            <input type="file" id="fileInput" multiple hidden>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 31V11m0 0-7 7m7-7 7 7M10 30v6a3 3 0 0 0 3 3h22a3 3 0 0 0 3-3v-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <strong>Drop files here</strong>
+            <span>or click to choose</span>
+            <span class="types" id="types"></span>
+          </label>
+          <div id="estimate" class="estimate" hidden aria-live="polite"></div>
+          <div id="ingestLog" class="log" hidden aria-live="polite"></div>
+        </div>
+        <div>
+          <h2>In the vault</h2>
+          <p class="sub" id="vaultPath"></p>
+          <ul class="sources" id="sourceList"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · compare -->
+    <div role="tabpanel" id="compare" class="panel" aria-labelledby="tab-compare" hidden>
+      <div class="composer">
+        <div class="composer-head">
+          <div>
+            <h2>Ask both</h2>
+            <p class="sub">Write the questions you really need answered. An expected answer is optional: key terms separated by commas, or <code>none</code> when your files do not answer it.</p>
+          </div>
+          <div class="kbox">
+            <label for="k">RAG retrieves <output id="kOut">8</output> paragraphs</label>
+            <input type="range" id="k" min="1" max="30" value="8">
+          </div>
+        </div>
+        <div id="questions" class="questions"></div>
+        <div class="composer-foot">
+          <button class="btn ghost" id="addQuestion" type="button">+ Add a question</button>
+          <button class="btn ghost" id="pasteQuestions" type="button">Paste several</button>
+          <span class="spacer"></span>
+          <span class="hint" id="askHint">The wiki navigates its pages (up to 8 calls); RAG answers in 1 call.</span>
+          <button class="btn primary" id="askBoth" type="button">Ask both</button>
+        </div>
+        <div id="askLog" class="log" hidden aria-live="polite"></div>
+      </div>
+      <div id="comparisons" class="comparisons"></div>
+    </div>
+
+    <!-- 3 · results -->
+    <div role="tabpanel" id="results" class="panel" aria-labelledby="tab-results" hidden>
+      <div id="advice" class="advice"></div>
+      <div id="arms" class="arms"></div>
+      <div class="tablehead">
+        <h2>Every question</h2>
+        <div class="row">
+          <a class="btn ghost" href="/api/export.csv" download>Download CSV</a>
+          <a class="btn ghost" href="/api/export.jsonl" download>Download JSONL</a>
+        </div>
+      </div>
+      <div class="tablewrap"><table id="table"></table></div>
+      <details class="readme">
+        <summary>How to read these results</summary>
+        <ul>
+          <li><b>Answered</b> counts answers with at least one valid citation. It is not correctness: expected answers and your verdicts measure quality.</li>
+          <li>The wiki pays once to write its pages and then spends more per question, because it reads them. RAG has no building cost and makes one call per question.</li>
+          <li>In the study behind wikinotes (100 arXiv papers, 100 questions, the same model for both arms) the wiki answered 0.70 of the answerable questions and RAG 0.48 with 5 retrieved paragraphs, at 7.2× the cost per question. With 20 paragraphs the gap fell to +0.06 and was no longer significant. Try more than one value of <i>k</i>.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+</main>
+
+<!-- source beside claim -->
+<aside id="drawer" class="drawer" aria-hidden="true" aria-labelledby="drawerTitle">
+  <div class="drawer-head">
+    <div><p class="eyebrow" id="drawerKicker">Cited paragraph</p><h3 id="drawerTitle"></h3></div>
+    <button class="icon" id="drawerClose" type="button" aria-label="Close">×</button>
+  </div>
+  <blockquote id="drawerText"></blockquote>
+</aside>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h2>Model</h2>
+    <p class="sub">Both arms use this same model. Any OpenAI-compatible endpoint works, including a local one.</p>
+    <div class="fields">
+      <label>Model name<input name="model" placeholder="deepseek-chat, gpt-4o-mini, llama3.1…" autocomplete="off"></label>
+      <label>Base URL<input name="base_url" placeholder="https://api.provider.com/v1 · http://localhost:11434/v1" autocomplete="off"></label>
+      <label>API key<input name="api_key" type="password" placeholder="Not needed for a local model" autocomplete="off"><small id="keyNote"></small></label>
+      <label>Input price <small>USD per million tokens</small><input name="price_input" type="number" min="0" step="any"></label>
+      <label>Output price <small>USD per million tokens</small><input name="price_output" type="number" min="0" step="any"></label>
+      <label>Spending cap <small>USD per session, 0 = none</small><input name="max_usd" type="number" min="0" step="any"></label>
+      <label>Context window <small>tokens</small><input name="context_tokens" type="number" min="1000" step="1000"></label>
+      <label>Embedding model for RAG <small>optional; empty = BM25, offline</small><input name="embedding_model" autocomplete="off"></label>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="save" id="saveSettings">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

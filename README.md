@@ -84,11 +84,16 @@ uv sync --extra lab
 uv run wikinotes lab ~/my-lab
 ```
 
+The page opens in your browser at `http://127.0.0.1:8765`. It runs on your computer only;
+the model calls are the one thing that leaves it. Set the model in the page (the key is
+kept in memory, never written to disk) or with the `WIKINOTES_*` variables above.
+
 1. **Sources.** Choose PDFs, Word or PowerPoint files, or plain text (`.txt`, `.md`). You see
    the estimated cost of building the wiki before anything is spent.
 2. **Compare.** Type the questions you care about, one per line. Optionally add `|` and the
    expected answer as key terms (`What produces ATP? | ATP, mitochondria`), or `none` when
    your files do not answer it. Each answer shows its citations, tokens, time and cost.
+   click a citation to read the source paragraph beside the answer.
 3. **Results.** Judge each pair of answers, download everything as CSV or JSONL, and read
    the recommendation: the wiki is suggested only when it answers clearly better (a gap of
    at least 0.10 over five or more evaluated questions); otherwise RAG, which is cheaper.
@@ -153,7 +158,8 @@ links and the graph work, and a citation takes you to the exact source paragraph
 
 Contributions of any size are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
-The lab is the first graphical interface. If you design or build interfaces, read
+The lab is the first graphical interface: a small FastAPI server (`server.py`) and a
+page with no build step (`src/wikinotes/web/`). If you design or build interfaces, read
 [Designing an interface for wikinotes](docs/interface.md).
 
 ## License

@@ -225,21 +225,17 @@ def lab(
         Path | None,
         typer.Argument(help="Vault folder to open or create. Defaults to ~/wikinotes-lab."),
     ] = None,
-    port: Annotated[int, typer.Option(help="Port of the local web page.")] = 8501,
+    port: Annotated[int, typer.Option(help="Port of the local web page.")] = 8765,
+    browser: Annotated[bool, typer.Option(help="Open the page in the browser.")] = True,
 ) -> None:
     """Open the lab: compare a wiki and RAG on your own files in the browser."""
     import importlib.util
-    import subprocess
-    import sys
 
-    if importlib.util.find_spec("streamlit") is None:
+    if any(importlib.util.find_spec(name) is None for name in ("fastapi", "uvicorn", "multipart")):
         raise _fail(
-            "The lab needs Streamlit. Install it with `uv sync --extra lab` "
+            "The lab needs its web server. Install it with `uv sync --extra lab` "
             "or `pip install 'wikinotes[lab]'`."
         )
-    script = Path(__file__).with_name("lab_app.py")
-    command = [sys.executable, "-m", "streamlit", "run", str(script)]
-    command += ["--server.port", str(port), "--browser.gatherUsageStats", "false"]
-    if folder is not None:
-        command += ["--", str(folder.expanduser().resolve())]
-    raise typer.Exit(code=subprocess.call(command))
+    from wikinotes import server
+
+    server.run(folder.expanduser().resolve() if folder else None, port, open_browser=browser)

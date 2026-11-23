@@ -1,7 +1,8 @@
 # Designing an interface for wikinotes
 
-wikinotes works today from the command line. This guide is for whoever designs and builds
-the first graphical interface: it says what the product already does, what the interface
+wikinotes works from the command line and from the lab (`wikinotes lab`), a local web page
+that compares the wiki and RAG on a person's files. This guide is for whoever designs and
+builds the next interfaces: it says what the product already does, what the interface
 must make visible, and which decisions are still open. It does not prescribe how anything
 should look.
 
@@ -109,7 +110,7 @@ These are known gaps. Open an issue for whichever the design needs first.
 
 | Gap | Today |
 |---|---|
-| No HTTP API | The library is called in-process from Python |
+| No public HTTP API | The lab's server (`server.py`) exposes what its page needs, on localhost only; it is not a stable API yet |
 | No cancel | An ingestion runs to the end or fails. `ingest` blocks, so run it off the interface thread |
 | No streamed answers | `ask` returns the whole answer at once |
 | No editing API | Pages are plain files anyone can edit, but a later ingestion may rewrite an edited page |

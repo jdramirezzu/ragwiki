@@ -115,7 +115,20 @@ def main() -> None:
         filters.append("[music]alimiter=limit=0.95[aout]")
 
     command = [FFMPEG, "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(filters)]
-    command += ["-map", "0:v", "-map", "[aout]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k"]
+    command += [
+        "-map",
+        "0:v",
+        "-map",
+        "[aout]",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-ar",
+        "48000",
+    ]
     command += ["-t", f"{total:.3f}", "-movflags", "+faststart", str(args.out)]
     subprocess.run(command, check=True)
     print(f"done {args.out} ({len(clips)} voice clips)")

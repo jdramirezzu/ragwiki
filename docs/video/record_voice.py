@@ -17,6 +17,9 @@ import sys
 import termios
 import time
 import tty
+import wave
+from array import array
+from math import log10
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -61,6 +64,33 @@ def key(timeout: float | None = None) -> str | None:
         return sys.stdin.read(1) if ready else None
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+
+def level(path: Path) -> tuple[float, float]:
+    """Loudness of a take in dBFS (RMS) and the share of clipped samples."""
+    try:
+        with wave.open(str(path)) as handle:
+            if handle.getsampwidth() != 2:
+                return 0.0, 0.0
+            samples = array("h", handle.readframes(handle.getnframes()))
+    except (wave.Error, EOFError):
+        return -99.0, 0.0
+    if not samples:
+        return -99.0, 0.0
+    rms = (sum(x * x for x in samples) / len(samples)) ** 0.5
+    clipped = sum(abs(x) >= 32_000 for x in samples) / len(samples)
+    return (20 * log10(rms / 32_768) if rms else -99.0), clipped
+
+
+def judge(path: Path) -> str:
+    db, clipped = level(path)
+    if db < -55:
+        return f"{RED}SILENCE ({db:.0f} dBFS): no sound: check the input device.{RESET}"
+    if clipped > 0.002:
+        return f"{RED}too loud, {clipped:.1%} clipped: move back or lower the mic volume{RESET}"
+    if db < -38:
+        return f"{YELLOW}quiet ({db:.0f} dBFS): speak closer to the microphone{RESET}"
+    return f"{GREEN}level ok ({db:.0f} dBFS){RESET}"
 
 
 def wrap(text: str, width: int) -> list[str]:
@@ -128,8 +158,17 @@ def main() -> None:
     print("Read each line calmly. Press a key when ready; Enter stops the take.")
     print(f"Then: {MENU}")
     print(f"\n{DIM}Tip: say one test clip and play it back to check the microphone level.{RESET}")
-    print("\nPress any key to start…")
-    key()
+    print("\nMicrophone check: say a few words now…")
+    test = args.out / ".mic-check.wav"
+    process = subprocess.Popen([*record, str(test)], stderr=subprocess.DEVNULL)
+    time.sleep(2.5)
+    process.terminate()
+    process.wait()
+    print(f"  {judge(test)}")
+    test.unlink(missing_ok=True)
+    print("\nPress any key to start, or q to quit and fix the microphone…")
+    if key() == "q":
+        return
 
     number = args.first
     while number <= len(lines):
@@ -153,7 +192,7 @@ def main() -> None:
                 if length <= window
                 else f"{RED}{length - window:.1f} s too long: say it a little faster{RESET}"
             )
-            print(f"\n  {length:.1f} s · {verdict}")
+            print(f"\n  {length:.1f} s · {verdict} · {judge(path)}")
             print(f"  {MENU}")
             choice = key()
             if choice == "p":

@@ -156,6 +156,7 @@ async function refreshBuild() {
 function selectTab(name) {
   if (!TABS.includes(name)) name = "sources";
   try { history.replaceState(null, "", `#${name}`); } catch { /* file previews */ }
+  scrollTo(0, 0);
   for (const tab of $$(".steps [role=tab]")) {
     const on = tab.getAttribute("aria-controls") === name;
     tab.setAttribute("aria-selected", on);
@@ -571,6 +572,7 @@ function wire() {
   });
   $("#drawerClose").addEventListener("click", closeDrawer);
   addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+  addEventListener("hashchange", () => selectTab(location.hash.slice(1)));
 }
 
 wire();

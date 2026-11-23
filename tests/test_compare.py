@@ -181,3 +181,14 @@ def test_recommend_uses_verdicts_when_there_are_no_expected_answers():
 
     assert result.choice == "wiki"
     assert "your verdicts on 5 questions" in result.reasons[0]
+
+
+def test_recommend_mentions_the_verdicts_when_expected_answers_decide():
+    from ragwiki.compare import recommend
+
+    items = [_comparison(True, True, verdict="tie")] * 5 + [_comparison(True, True, verdict="wiki")]
+
+    result = recommend(summarize(items))
+
+    assert result.choice == "rag"
+    assert "Your verdicts on 6 questions: wiki preferred 1, RAG 0, ties 5" in result.reasons[1]

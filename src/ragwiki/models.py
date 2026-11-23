@@ -20,6 +20,8 @@ class Reply:
 
 
 DEFAULT_CONTEXT_TOKENS = 32_000
+# Providers answer 429 or 503 during demand spikes; the SDK retries with growing waits.
+MAX_RETRIES = 6
 
 
 def estimate_tokens(text: str) -> int:
@@ -135,11 +137,14 @@ class OpenAICompatibleModel:
         self.model = model
         self.vision_model = vision_model or model
         # Local servers ignore the key, but the SDK refuses to start without one.
-        self.client = OpenAI(base_url=base_url, api_key=api_key or "not-needed")
+        self.client = OpenAI(
+            base_url=base_url, api_key=api_key or "not-needed", max_retries=MAX_RETRIES
+        )
         self.vision_client = (
             OpenAI(
                 base_url=vision_base_url or base_url,
                 api_key=vision_api_key or api_key or "not-needed",
+                max_retries=MAX_RETRIES,
             )
             if vision_base_url or vision_api_key
             else self.client

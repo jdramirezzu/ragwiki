@@ -17,7 +17,14 @@ from typing import Protocol
 
 from ragwiki.ask import NOT_FOUND
 from ragwiki.ingest import clean_body
-from ragwiki.models import ConfigError, Model, ModelError, estimate_tokens, extract_json
+from ragwiki.models import (
+    MAX_RETRIES,
+    ConfigError,
+    Model,
+    ModelError,
+    estimate_tokens,
+    extract_json,
+)
 from ragwiki.search import rank
 from ragwiki.vault import STATE_DIR, Vault
 
@@ -74,7 +81,9 @@ class OpenAICompatibleEmbedder:
         from openai import OpenAI
 
         self.name = model
-        self.client = OpenAI(base_url=base_url, api_key=api_key or "not-needed")
+        self.client = OpenAI(
+            base_url=base_url, api_key=api_key or "not-needed", max_retries=MAX_RETRIES
+        )
 
     def embed(self, texts: Sequence[str]) -> list[list[float]]:
         from openai import OpenAIError

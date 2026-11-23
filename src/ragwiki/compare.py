@@ -395,6 +395,11 @@ def recommend(summary: Summary, k: int | None = None) -> Recommendation:
         f"Quality from {basis} on {count} questions: wiki {rates['wiki']:.2f}, "
         f"RAG {rates['rag']:.2f} (gap {gap:+.2f}).",
     ]
+    if basis == "expected answers" and summary.judged:
+        reasons.append(
+            f"Your verdicts on {summary.judged} questions: wiki preferred {wiki.preferred}, "
+            f"RAG {rag.preferred}, ties {summary.ties}, neither right {summary.neither}."
+        )
     if cost:
         reasons.append(f"Each wiki question costs {cost}× a RAG question.")
     elif tokens:

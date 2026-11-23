@@ -172,6 +172,7 @@ class Lab:
         self.metered: MeteredModel | None = None
         self._embedder: tuple[tuple, Embedder | None] | None = None
         self.jobs: dict[str, dict] = {}
+        self.estimates: dict[tuple, dict] = {}
         self.busy = threading.Lock()
         if folder is not None and (Path(folder) / STATE_DIR / "state.json").is_file():
             self.vault = Vault(Path(folder))
@@ -271,14 +272,24 @@ def _build_state(lab: Lab) -> dict:
     wiki = {"sources": len(sources) - len(pending), "pending": len(pending)}
     wiki |= {"pages": len(vault.page_slugs()), "estimate": None}
     if pending:
-        estimate = estimate_ingest(
-            vault,
-            [vault.original_path(key) for key in pending],
-            context_tokens=lab.config.context_tokens,
-            price_input=lab.config.price_input,
-            price_output=lab.config.price_output,
+        # Extracting PDFs is slow, so an estimate is reused until the inputs change.
+        key = (
+            tuple(sorted(pending)),
+            tuple(vault.page_slugs()),
+            lab.config.context_tokens,
+            lab.config.price_input,
+            lab.config.price_output,
         )
-        wiki["estimate"] = asdict(estimate)
+        if key not in lab.estimates:
+            estimate = estimate_ingest(
+                vault,
+                [vault.original_path(source) for source in pending],
+                context_tokens=lab.config.context_tokens,
+                price_input=lab.config.price_input,
+                price_output=lab.config.price_output,
+            )
+            lab.estimates[key] = asdict(estimate)
+        wiki["estimate"] = lab.estimates[key]
     rag = {"retrieval": lab.config.retrieval, "label": _retrieval_label(lab.config)}
     if lab.config.retrieval == "bm25":
         paragraphs = sum(len(vault.load_source(key).paragraphs) for key in sources)

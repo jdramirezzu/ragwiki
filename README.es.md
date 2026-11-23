@@ -8,7 +8,23 @@ Cada afirmación enlaza al párrafo del que salió.
 
 [Read in English](README.md)
 
-Mira la introducción de 90 segundos: [español](docs/video/media/ragwiki-intro-es.mp4) · [English](docs/video/media/ragwiki-intro-en.mp4). Se genera con código en [`docs/video`](docs/video/README.md).
+## Míralo en 90 segundos
+
+[![Mira la introducción de 90 segundos a ragwiki](docs/video/media/poster-es.png)](docs/video/media/ragwiki-intro-es.mp4)
+
+El video sigue una corrida real con cinco artículos de arXiv sobre wikis mantenidas por LLM,
+respondidos por `deepseek-flash`:
+
+1. **Archivos.** Cinco PDF se convierten en 184 párrafos citables, gratis.
+2. **Construir.** El índice vectorial se construye en el computador; la WikiLLM escribe 24 páginas
+   enlazadas por 0,11 USD, con el costo a la vista antes de gastar.
+3. **Preguntar.** En un dato puntual las dos aciertan y la búsqueda vectorial gasta menos. En una
+   pregunta que une varios artículos solo la WikiLLM los sintetiza, a unas 11 veces el costo.
+4. **Resultados.** Una recomendación para ese corpus, con costos, tiempos y los veredictos de la
+   persona.
+
+[Míralo en inglés](docs/video/media/ragwiki-intro-en.mp4). El video se genera con código en
+[`docs/video`](docs/video/README.md), así que se puede actualizar cuando cambie el laboratorio.
 
 > Estado: desarrollo inicial, construido de forma abierta a partir de un proyecto de
 > investigación de maestría. La [hoja de ruta](#hoja-de-ruta) indica qué funciona hoy.

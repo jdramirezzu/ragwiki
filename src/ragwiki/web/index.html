@@ -14,8 +14,12 @@
     <span>ragwiki <b>lab</b></span>
   </div>
   <div class="status">
-    <button class="chip" id="vaultChip" type="button" title="Change the experiment folder">No folder</button>
-    <button class="chip" id="modelChip" type="button" title="Model settings">No model</button>
+    <div class="seg lang" role="group" aria-label="Language / Idioma">
+      <button type="button" data-lang="es">ES</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
+    <button class="chip" id="vaultChip" type="button" data-i18n-title="changeFolder"></button>
+    <button class="chip" id="modelChip" type="button" data-i18n-title="modelSettings"></button>
     <span class="chip quiet" id="spendChip" hidden></span>
   </div>
 </header>
@@ -23,135 +27,128 @@
 <main>
   <!-- first run: choose a folder -->
   <section id="welcome" class="welcome" hidden>
-    <p class="eyebrow">Vector search or WikiLLM?</p>
-    <h1>Build the one your documents need, or both and let your questions decide.</h1>
-    <p class="lede"><b class="rag-t">Vector search (RAG)</b> finds the closest paragraphs every time you ask.
-      A <b class="wiki-t">WikiLLM</b> has a model write a linked wiki once, when you add files, and then reads it.
-      This lab builds either one from your files, answers with it, and compares both with the same model.</p>
+    <p class="eyebrow" data-i18n="welcomeEyebrow"></p>
+    <h1 data-i18n="welcomeTitle"></h1>
+    <p class="lede" data-i18n="welcomeLede"></p>
     <form id="vaultForm" class="vaultform">
-      <label for="folder">Folder for this experiment</label>
+      <label for="folder" data-i18n="folderLabel"></label>
       <div class="row">
         <input id="folder" name="folder" required autocomplete="off" spellcheck="false">
-        <button class="btn primary" type="submit">Open or create</button>
+        <button class="btn primary" type="submit" data-i18n="openOrCreate"></button>
       </div>
-      <p class="hint">A folder of plain Markdown that opens in Obsidian or any editor. Nothing leaves your computer except the model calls.</p>
+      <p class="hint" data-i18n="folderHint"></p>
     </form>
   </section>
 
   <section id="workspace" hidden>
     <nav class="steps" role="tablist" aria-label="Steps">
-      <button role="tab" aria-controls="sources" aria-selected="true"><span>1</span>Files <em id="countSources"></em></button>
-      <button role="tab" aria-controls="build" aria-selected="false"><span>2</span>Build</button>
-      <button role="tab" aria-controls="ask" aria-selected="false"><span>3</span>Ask</button>
-      <button role="tab" aria-controls="results" aria-selected="false"><span>4</span>Results</button>
+      <button role="tab" aria-controls="sources" aria-selected="true"><span>1</span><b data-i18n="tabFiles"></b> <em id="countSources"></em></button>
+      <button role="tab" aria-controls="build" aria-selected="false"><span>2</span><b data-i18n="tabBuild"></b></button>
+      <button role="tab" aria-controls="ask" aria-selected="false"><span>3</span><b data-i18n="tabAsk"></b></button>
+      <button role="tab" aria-controls="results" aria-selected="false"><span>4</span><b data-i18n="tabResults"></b></button>
     </nav>
 
     <!-- 1 · files -->
     <div role="tabpanel" id="sources" class="panel">
       <div class="grid2">
         <div>
-          <h2>Add your files</h2>
-          <p class="sub">PDF with a text layer, Word (.docx), PowerPoint (.pptx) and plain text (.txt, .md).
-            Adding is free: the text is extracted on your computer and split into citable paragraphs.
-            Both architectures read exactly these paragraphs.</p>
+          <h2 data-i18n="addFiles"></h2>
+          <p class="sub" data-i18n="addFilesSub"></p>
           <label class="drop" id="drop" tabindex="0">
             <input type="file" id="fileInput" multiple hidden>
             <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 31V11m0 0-7 7m7-7 7 7M10 30v6a3 3 0 0 0 3 3h22a3 3 0 0 0 3-3v-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <strong>Drop files here</strong>
-            <span>or click to choose</span>
+            <strong data-i18n="drop"></strong>
+            <span data-i18n="orClick"></span>
             <span class="types" id="types"></span>
           </label>
           <div id="addLog" class="log" hidden aria-live="polite"></div>
         </div>
         <div>
-          <h2>Your files</h2>
+          <h2 data-i18n="yourFiles"></h2>
           <p class="sub" id="vaultPath"></p>
           <ul class="sources" id="sourceList"></ul>
-          <button class="btn primary next" type="button" data-goto="build" id="toBuild" hidden>Next: build →</button>
+          <button class="btn primary next" type="button" data-goto="build" id="toBuild" hidden data-i18n="nextBuild"></button>
         </div>
       </div>
     </div>
 
     <!-- 2 · build -->
     <div role="tabpanel" id="build" class="panel" hidden>
-      <h2>Build one architecture, or both</h2>
-      <p class="sub">They answer from the same paragraphs with the same model. What changes is when the work happens:
-        vector search does it at every question, the WikiLLM does it once, when files are added.</p>
+      <h2 data-i18n="buildTitle"></h2>
+      <p class="sub" data-i18n="buildSub"></p>
 
       <div class="builders">
         <article class="builder rag">
           <header>
-            <span class="tag">Vector search · RAG</span>
-            <h3>Finds the paragraphs closest to each question</h3>
+            <span class="tag" data-i18n="ragTag"></span>
+            <h3 data-i18n="ragHead"></h3>
           </header>
-          <ol class="flow" aria-label="How vector search works">
-            <li>paragraphs</li><li>vectors</li><li>closest <i>k</i></li><li>1 model call</li>
+          <ol class="flow">
+            <li data-i18n="flowParagraphs"></li><li data-i18n="flowVectors"></li><li data-i18n="flowClosest"></li><li data-i18n="flowCall"></li>
           </ol>
           <div class="field">
-            <label for="retrieval">Search with</label>
+            <label for="retrieval" data-i18n="searchWith"></label>
             <select id="retrieval">
-              <option value="local">Embeddings on this computer (free)</option>
-              <option value="provider">Embeddings from your provider</option>
-              <option value="bm25">Keywords only, BM25 (no index)</option>
+              <option value="local" data-i18n="optLocal"></option>
+              <option value="provider" data-i18n="optProvider"></option>
+              <option value="bm25" data-i18n="optBm25"></option>
             </select>
-            <input id="embeddingModel" placeholder="" autocomplete="off" spellcheck="false" aria-label="Embedding model">
+            <input id="embeddingModel" autocomplete="off" spellcheck="false" aria-label="Embedding model">
             <small id="retrievalNote" class="hint"></small>
           </div>
           <div class="progress"><i id="ragBar"></i></div>
           <p class="status-line" id="ragStatus"></p>
           <dl class="costs">
-            <div><dt>Building</dt><dd id="ragBuildCost"></dd></div>
-            <div><dt>Each question</dt><dd>1 model call · about 1,400 tokens in the study</dd></div>
+            <div><dt data-i18n="building"></dt><dd id="ragBuildCost"></dd></div>
+            <div><dt data-i18n="eachQuestion"></dt><dd data-i18n="ragEach"></dd></div>
           </dl>
-          <button class="btn primary" type="button" id="buildIndex">Build vector index</button>
+          <button class="btn primary" type="button" id="buildIndex"></button>
           <div id="indexLog" class="log" hidden aria-live="polite"></div>
         </article>
 
         <article class="builder wiki">
           <header>
             <span class="tag">WikiLLM</span>
-            <h3>Writes a linked wiki once, then reads it to answer</h3>
+            <h3 data-i18n="wikiHead"></h3>
           </header>
-          <ol class="flow" aria-label="How the WikiLLM works">
-            <li>paragraphs</li><li>model plans</li><li>model writes pages</li><li>agent reads pages</li>
+          <ol class="flow">
+            <li data-i18n="flowParagraphs"></li><li data-i18n="flowPlans"></li><li data-i18n="flowWrites"></li><li data-i18n="flowReads"></li>
           </ol>
           <div class="progress"><i id="wikiBar"></i></div>
           <p class="status-line" id="wikiStatus"></p>
           <dl class="costs">
-            <div><dt>Building</dt><dd id="wikiBuildCost"></dd></div>
-            <div><dt>Each question</dt><dd>up to 8 model calls · about 10,600 tokens in the study</dd></div>
+            <div><dt data-i18n="building"></dt><dd id="wikiBuildCost"></dd></div>
+            <div><dt data-i18n="eachQuestion"></dt><dd data-i18n="wikiEach"></dd></div>
           </dl>
-          <button class="btn primary" type="button" id="buildWiki">Build WikiLLM</button>
+          <button class="btn primary" type="button" id="buildWiki"></button>
           <div id="wikiLog" class="log" hidden aria-live="polite"></div>
         </article>
       </div>
 
-      <h2 class="mt">How they differ</h2>
-      <p class="sub">From a study with 100 scientific papers, 100 questions and the same model for both.</p>
+      <h2 class="mt" data-i18n="differTitle"></h2>
+      <p class="sub" data-i18n="differSub"></p>
       <div class="tablewrap">
         <table class="diff">
-          <thead><tr><th></th><th class="rag-t">Vector search (RAG)</th><th class="wiki-t">WikiLLM</th></tr></thead>
+          <thead><tr><th></th><th class="rag-t" data-i18n="diffRag"></th><th class="wiki-t">WikiLLM</th></tr></thead>
           <tbody>
-            <tr><th>When the work happens</th><td>At every question</td><td>Once, when a file is added</td></tr>
-            <tr><th>Building</th><td>Free with local embeddings; minutes</td><td>2 model calls per file; 1.6–2.9 USD and 1.8 h for 100 papers</td></tr>
-            <tr><th>Cost per question</th><td><b>1×</b></td><td>7.2× and 4.1× the time</td></tr>
-            <tr><th>Correct answers (5 paragraphs)</th><td>0.48</td><td><b>0.70</b></td></tr>
-            <tr><th>Correct answers (20 paragraphs)</th><td>0.64</td><td>0.70: the gap is no longer significant</td></tr>
-            <tr><th>Questions that join several documents</th><td>Misses what it does not retrieve</td><td><b>Strongest</b>: pages already join sources</td></tr>
-            <tr><th>When files change</th><td>Re-embed the changed file</td><td>Pages are rewritten; old values may linger</td></tr>
-            <tr><th>What you get besides answers</th><td>Nothing to read</td><td>A wiki of linked pages you can browse</td></tr>
-            <tr><th>Typical failure</th><td>“Not in your files” when retrieval misses</td><td>Answers when it should abstain; misses what it did not capture</td></tr>
+            <tr><th data-i18n="d1"></th><td data-i18n="d1r"></td><td data-i18n="d1w"></td></tr>
+            <tr><th data-i18n="d2"></th><td data-i18n="d2r"></td><td data-i18n="d2w"></td></tr>
+            <tr><th data-i18n="d3"></th><td><b>1×</b></td><td data-i18n="d3w"></td></tr>
+            <tr><th data-i18n="d4"></th><td class="dec">0.48</td><td class="dec"><b>0.70</b></td></tr>
+            <tr><th data-i18n="d5"></th><td class="dec">0.64</td><td data-i18n="d5w"></td></tr>
+            <tr><th data-i18n="d6"></th><td data-i18n="d6r"></td><td data-i18n="d6w"></td></tr>
+            <tr><th data-i18n="d7"></th><td data-i18n="d7r"></td><td data-i18n="d7w"></td></tr>
+            <tr><th data-i18n="d8"></th><td data-i18n="d8r"></td><td data-i18n="d8w"></td></tr>
+            <tr><th data-i18n="d9"></th><td data-i18n="d9r"></td><td data-i18n="d9w"></td></tr>
           </tbody>
         </table>
       </div>
       <div class="choose">
-        <div class="choose-card rag"><h3>Choose vector search when</h3><ul>
-          <li>budget or speed matter most</li><li>files change often</li>
-          <li>questions ask for one fact from one document</li><li>you will ask few questions</li></ul></div>
-        <div class="choose-card wiki"><h3>Choose a WikiLLM when</h3><ul>
-          <li>questions join or compare several documents</li><li>files are stable and you will ask many questions</li>
-          <li>you also want to read and browse the knowledge</li><li>a better answer is worth several times the cost</li></ul></div>
-        <div class="choose-card both"><h3>Not sure?</h3><p>Build both and ask the same questions in step 3. The lab compares the answers and recommends one for your files.</p></div>
+        <div class="choose-card rag"><h3 data-i18n="chooseRag"></h3><ul>
+          <li data-i18n="chooseRag1"></li><li data-i18n="chooseRag2"></li><li data-i18n="chooseRag3"></li><li data-i18n="chooseRag4"></li></ul></div>
+        <div class="choose-card wiki"><h3 data-i18n="chooseWiki"></h3><ul>
+          <li data-i18n="chooseWiki1"></li><li data-i18n="chooseWiki2"></li><li data-i18n="chooseWiki3"></li><li data-i18n="chooseWiki4"></li></ul></div>
+        <div class="choose-card both"><h3 data-i18n="notSure"></h3><p data-i18n="notSureText"></p></div>
       </div>
     </div>
 
@@ -160,26 +157,26 @@
       <div class="composer">
         <div class="composer-head">
           <div>
-            <h2>Ask your files</h2>
-            <div class="seg mode" role="radiogroup" aria-label="Answer with">
-              <button type="button" role="radio" data-mode="both" aria-checked="true">Compare both</button>
-              <button type="button" role="radio" data-mode="rag" aria-checked="false">Vector search only</button>
-              <button type="button" role="radio" data-mode="wiki" aria-checked="false">WikiLLM only</button>
+            <h2 data-i18n="askTitle"></h2>
+            <div class="seg mode" role="radiogroup">
+              <button type="button" role="radio" data-mode="both" aria-checked="true" data-i18n="modeBoth"></button>
+              <button type="button" role="radio" data-mode="rag" aria-checked="false" data-i18n="modeRag"></button>
+              <button type="button" role="radio" data-mode="wiki" aria-checked="false" data-i18n="modeWiki"></button>
             </div>
             <p class="sub" id="modeNote"></p>
           </div>
           <div class="kbox" id="kbox">
-            <label for="k">Vector search reads <output id="kOut">8</output> paragraphs</label>
+            <label for="k" id="kLabel"></label>
             <input type="range" id="k" min="1" max="30" value="8">
           </div>
         </div>
         <div id="questions" class="questions"></div>
         <div class="composer-foot">
-          <button class="btn ghost" id="addQuestion" type="button">+ Add a question</button>
-          <button class="btn ghost" id="pasteQuestions" type="button">Paste several</button>
+          <button class="btn ghost" id="addQuestion" type="button" data-i18n="addQuestion"></button>
+          <button class="btn ghost" id="pasteQuestions" type="button" data-i18n="pasteSeveral"></button>
           <span class="spacer"></span>
           <span class="hint" id="askHint"></span>
-          <button class="btn primary" id="askButton" type="button">Ask</button>
+          <button class="btn primary" id="askButton" type="button"></button>
         </div>
         <div id="askLog" class="log" hidden aria-live="polite"></div>
       </div>
@@ -191,20 +188,16 @@
       <div id="advice" class="advice"></div>
       <div id="arms" class="arms"></div>
       <div class="tablehead">
-        <h2>Every comparison</h2>
+        <h2 data-i18n="everyComparison"></h2>
         <div class="row">
-          <a class="btn ghost" href="/api/export.csv" download>Download CSV</a>
-          <a class="btn ghost" href="/api/export.jsonl" download>Download JSONL</a>
+          <a class="btn ghost" href="/api/export.csv" download data-i18n="downloadCsv"></a>
+          <a class="btn ghost" href="/api/export.jsonl" download data-i18n="downloadJsonl"></a>
         </div>
       </div>
       <div class="tablewrap"><table id="table"></table></div>
       <details class="readme">
-        <summary>How to read these results</summary>
-        <ul>
-          <li><b>Answered</b> counts answers with at least one valid citation. It is not correctness: expected answers and your verdicts measure quality.</li>
-          <li>The WikiLLM pays once to write its pages and then spends more per question, because it reads them. Vector search has no model cost to build and makes one call per question.</li>
-          <li>In the study behind ragwiki the WikiLLM answered 0.70 of the answerable questions and RAG 0.48 with 5 retrieved paragraphs, at 7.2× the cost per question. With 20 paragraphs the gap fell to +0.06 and was no longer significant. Try more than one value of <i>k</i>.</li>
-        </ul>
+        <summary data-i18n="readTitle"></summary>
+        <ul><li data-i18n="read1"></li><li data-i18n="read2"></li><li data-i18n="read3"></li></ul>
       </details>
     </div>
   </section>
@@ -213,28 +206,28 @@
 <!-- source beside claim -->
 <aside id="drawer" class="drawer" aria-hidden="true" aria-labelledby="drawerTitle">
   <div class="drawer-head">
-    <div><p class="eyebrow" id="drawerKicker">Cited paragraph</p><h3 id="drawerTitle"></h3></div>
-    <button class="icon" id="drawerClose" type="button" aria-label="Close">×</button>
+    <div><p class="eyebrow" id="drawerKicker" data-i18n="citedParagraph"></p><h3 id="drawerTitle"></h3></div>
+    <button class="icon" id="drawerClose" type="button" data-i18n-label="close">×</button>
   </div>
   <blockquote id="drawerText"></blockquote>
 </aside>
 
 <dialog id="settings">
   <form method="dialog" id="settingsForm">
-    <h2>Model</h2>
-    <p class="sub">Both architectures use this same model, so the only difference is how knowledge reaches it. Any OpenAI-compatible endpoint works, including a local one.</p>
+    <h2 data-i18n="settingsTitle"></h2>
+    <p class="sub" data-i18n="settingsSub"></p>
     <div class="fields">
-      <label>Model name<input name="model" placeholder="deepseek-chat, gpt-4o-mini, llama3.1…" autocomplete="off"></label>
-      <label>Base URL<input name="base_url" placeholder="https://api.provider.com/v1 · http://localhost:11434/v1" autocomplete="off"></label>
-      <label>API key<input name="api_key" type="password" placeholder="Not needed for a local model" autocomplete="off"><small id="keyNote"></small></label>
-      <label>Input price <small>USD per million tokens</small><input name="price_input" type="number" min="0" step="any"></label>
-      <label>Output price <small>USD per million tokens</small><input name="price_output" type="number" min="0" step="any"></label>
-      <label>Spending cap <small>USD per session, 0 = none</small><input name="max_usd" type="number" min="0" step="any"></label>
-      <label>Context window <small>tokens</small><input name="context_tokens" type="number" min="1000" step="1000"></label>
+      <label><span data-i18n="fModel"></span><input name="model" placeholder="deepseek-chat, gpt-4o-mini, llama3.1…" autocomplete="off"></label>
+      <label><span data-i18n="fBase"></span><input name="base_url" placeholder="https://api.provider.com/v1 · http://localhost:11434/v1" autocomplete="off"></label>
+      <label><span data-i18n="fKey"></span><input name="api_key" type="password" data-i18n-ph="fKeyPh" autocomplete="off"><small id="keyNote"></small></label>
+      <label><span><span data-i18n="fIn"></span> <small data-i18n="fPerM"></small></span><input name="price_input" type="number" min="0" step="any"></label>
+      <label><span><span data-i18n="fOut"></span> <small data-i18n="fPerM"></small></span><input name="price_output" type="number" min="0" step="any"></label>
+      <label><span><span data-i18n="fCap"></span> <small data-i18n="fCapNote"></small></span><input name="max_usd" type="number" min="0" step="any"></label>
+      <label><span><span data-i18n="fCtx"></span> <small data-i18n="fTokens"></small></span><input name="context_tokens" type="number" min="1000" step="1000"></label>
     </div>
     <div class="dialog-foot">
-      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
-      <button class="btn primary" value="save">Save</button>
+      <button class="btn ghost" value="cancel" formnovalidate data-i18n="cancel"></button>
+      <button class="btn primary" value="save" data-i18n="save"></button>
     </div>
   </form>
 </dialog>

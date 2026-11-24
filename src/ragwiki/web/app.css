@@ -370,3 +370,7 @@ select {
   .builders, .choose { grid-template-columns: 1fr; }
   .costs div { grid-template-columns: 1fr; gap: 0; }
 }
+
+/* language switch */
+.seg.lang button{padding:4px 10px;font-size:12.5px}
+.seg.lang button[aria-pressed=true]{background:var(--ink);color:var(--paper)}

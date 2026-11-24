@@ -21,4 +21,7 @@ uv run --no-project --with playwright --with imageio-ffmpeg python docs/video/re
 ```
 
 The numbers on screen come from that run (5 papers, 184 paragraphs, a 24-page wiki built
-for $0.11, 7 compared questions) and from the study behind ragwiki.
+for $0.11, 7 compared questions, 5 kinds of RAG ranked on 5 questions) and from the study
+behind ragwiki. The run used our own DeepSeek key, as the video says; anyone else connects
+their own model. The English cut (1:43) has the Kinds of RAG scene; the Spanish cut (1:34)
+will get it once clip s11 is recorded in Spanish.

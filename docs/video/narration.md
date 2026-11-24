@@ -1,7 +1,7 @@
 # Narration script
 
 Record one short clip per scene, in a quiet room, about 20 cm from the microphone. Name
-the files `s01` to `s13` (any audio format: `.wav`, `.m4a`, `.mp3`, `.ogg`) and put each
+the files `s01` to `s14` (any audio format: `.wav`, `.m4a`, `.mp3`, `.ogg`) and put each
 language in its own folder. `mix.py` places every clip at the start of its scene, lowers the
 music while you speak and warns when a clip is longer than its window.
 
@@ -21,45 +21,48 @@ word for word.
 | s08 | 48.3 s | 7.6 s | Step 3, several papers |
 | s09 | 56.3 s | 4.6 s | Citation beside the answer |
 | s10 | 61.3 s | 7.6 s | Step 4, recommendation |
-| s11 | 69.3 s | 9.6 s | Advantages |
-| s12 | 79.3 s | 6.6 s | The research behind it |
-| s13 | 86.3 s | 7.2 s | Try it |
+| s11 | 69.3 s | 8.6 s | Step 5, kinds of RAG |
+| s12 | 78.3 s | 9.6 s | Advantages |
+| s13 | 88.3 s | 6.6 s | The research behind it |
+| s14 | 95.3 s | 7.2 s | Try it |
 
 ## Español
 
 | Clip | Texto |
 |---|---|
-| s01 | ragwiki: ¿búsqueda vectorial o WikiLLM? Que decidan tus preguntas. |
+| s01 | ragwiki: ¿qué tipo de RAG le sirve a tus documentos? Que decidan tus preguntas. |
 | s02 | Hay dos formas de darle tus documentos a un modelo: buscar párrafos en cada pregunta, o escribir una wiki una sola vez y después leerla. |
 | s03 | ¿Cuál te conviene? ragwiki te deja construir las dos y compararlas. |
-| s04 | Primero, agrega tus archivos: PDF, Word, PowerPoint o texto. Es gratis: solo se extrae el texto. |
+| s04 | Conecta tu propio modelo y tu clave de API; esta demo usa la nuestra. Luego agrega tus archivos, gratis. |
 | s05 | Luego, construye. La búsqueda vectorial se indexa gratis en tu equipo, y la WikiLLM te muestra su costo antes de gastar. Aquí escribió veinticuatro páginas. |
 | s06 | La herramienta explica en qué se diferencian y cuándo conviene cada una. |
 | s07 | Pregunta con las dos. En un dato puntual, ambas aciertan, y la búsqueda vectorial gasta menos. |
 | s08 | Pero cuando la pregunta une varios artículos, solo la WikiLLM los sintetiza, a unas once veces el costo. |
 | s09 | Y cada cita abre el párrafo exacto de la fuente. |
 | s10 | Al final, recibes una recomendación explicada para tu corpus, con costos, tiempos y tus propios veredictos. |
-| s11 | El mismo modelo para las dos, el costo antes de gastar, citas verificadas, tus archivos en tu equipo, cualquier modelo y código abierto. |
-| s12 | Nace de nuestra investigación con cien artículos de arXiv: la respuesta depende del corpus. |
-| s13 | Pruébalo con tus documentos. Lo encuentras en GitHub como ragwiki. |
+| s11 | ¿Y qué tipo de RAG? Compara gratis la búsqueda por palabras, vectorial, híbrida y con reordenador sobre tus preguntas, antes de pagar una respuesta. |
+| s12 | El mismo modelo para las dos, tu propia clave, el costo antes de gastar, citas verificadas, tus archivos en tu equipo, en español o inglés, y código abierto. |
+| s13 | Nace de nuestra investigación con cien artículos de arXiv: la respuesta depende del corpus. |
+| s14 | Pruébalo con tus documentos. Lo encuentras en GitHub como ragwiki. |
 
 ## English
 
 | Clip | Text |
 |---|---|
-| s01 | ragwiki: vector search or a WikiLLM? Let your questions decide. |
+| s01 | ragwiki: which kind of RAG fits your documents? Let your questions decide. |
 | s02 | There are two ways to give a model your documents: search for paragraphs at every question, or write a wiki once and read it afterwards. |
 | s03 | Which one fits you? ragwiki lets you build both and compare them. |
-| s04 | First, add your files: PDF, Word, PowerPoint or text. It's free: only the text is extracted. |
+| s04 | Connect your own model and API key; this demo uses ours. Then add your files, for free. |
 | s05 | Then build. Vector search is indexed for free on your computer, and the WikiLLM shows its cost before you spend. Here it wrote twenty-four pages. |
 | s06 | The tool explains how they differ and when each one pays off. |
 | s07 | Ask with both. For a single fact, both are right, and vector search spends less. |
 | s08 | But when a question joins several papers, only the WikiLLM brings them together, at about eleven times the cost. |
 | s09 | And every citation opens the exact source paragraph. |
 | s10 | At the end, you get an explained recommendation for your corpus, with costs, times and your own verdicts. |
-| s11 | One model for both, the cost before you spend, verified citations, your files on your computer, any model, and open source. |
-| s12 | It comes from our research with a hundred arXiv papers: the answer depends on the corpus. |
-| s13 | Try it with your documents. You'll find it on GitHub as ragwiki. |
+| s11 | And which kind of RAG? Compare keyword, vector, hybrid and reranked search on your questions for free, before paying for an answer. |
+| s12 | One model for both, your own key, the cost before you spend, verified citations, your files on your computer, English or Spanish, and open source. |
+| s13 | It comes from our research with a hundred arXiv papers: the answer depends on the corpus. |
+| s14 | Try it with your documents. You'll find it on GitHub as ragwiki. |
 
 ## Mixing
 

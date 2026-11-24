@@ -1,7 +1,7 @@
 """Add the music and, when recorded, the narration to the intro video.
 
 Usage:
-  python mix.py --video in.mp4 --out out.mp4 [--voice folder-with-s01..s13] [--music music.wav]
+  python mix.py --video in.mp4 --out out.mp4 [--voice folder-with-s01..s14] [--music music.wav]
 
 Each clip `sNN` starts at its scene (see narration.md). The music is lowered while the voice
 speaks. Clips longer than their window are reported, not cut.
@@ -29,9 +29,10 @@ CLIPS = [
     (48.3, 7.6),
     (56.3, 4.6),
     (61.3, 7.6),
-    (69.3, 9.6),
-    (79.3, 6.6),
-    (86.3, 7.2),
+    (69.3, 8.6),
+    (78.3, 9.6),
+    (88.3, 6.6),
+    (95.3, 7.2),
 ]
 # Laptop microphones pick up a low rumble that eats headroom: cut it, reduce the hiss and
 # even out the voice before the levels are matched.
@@ -64,7 +65,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--video", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
-    parser.add_argument("--voice", type=Path, help="folder with s01..s13 audio clips")
+    parser.add_argument("--voice", type=Path, help="folder with s01..s14 audio clips")
     parser.add_argument("--music", type=Path, help="music file; generated when missing")
     parser.add_argument("--music-volume", type=float, default=0.55)
     parser.add_argument("--declip", action="store_true", help="repair clipped takes first")
@@ -84,7 +85,7 @@ def main() -> None:
     filters = [f"[1:a]aresample=48000,volume={args.music_volume}[music]"]
     clips = find_clips(args.voice) if args.voice else []
     if args.voice and not clips:
-        raise SystemExit(f"No clips named s01..s13 in {args.voice}")
+        raise SystemExit(f"No clips named s01..s14 in {args.voice}")
 
     for number, path in clips:
         start, window = CLIPS[number - 1]

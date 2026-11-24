@@ -192,3 +192,26 @@ def test_recommend_mentions_the_verdicts_when_expected_answers_decide():
 
     assert result.choice == "rag"
     assert "Your verdicts on 6 questions: wiki preferred 1, RAG 0, ties 5" in result.reasons[1]
+
+
+@pytest.mark.parametrize("key", ["none", "ninguna", "Ninguno", "sin respuesta", "no answer"])
+def test_check_expected_accepts_no_answer_keys_in_spanish_and_english(key):
+    from ragwiki.compare import check_expected
+
+    assert check_expected(_arm(False, "No está en tus documentos."), key) is True
+    assert check_expected(_arm(True, "Sí, está [[src-a#^p1]]."), key) is False
+
+
+def test_recommend_speaks_spanish_when_asked():
+    from ragwiki.compare import recommend
+
+    items = [_comparison(True, False)] * 3 + [_comparison(True, True)] * 7
+    waiting = recommend(summarize([_comparison(True, False)] * 4), lang="es")
+    wiki = recommend(summarize(items), k=8, lang="es")
+    rag = recommend(summarize([_comparison(True, True)] * 5), lang="es")
+
+    assert waiting.headline == "Aún no hay evidencia suficiente: evalúa al menos 5 preguntas"
+    assert wiki.headline == "La WikiLLM responde claramente mejor tus preguntas"
+    assert "Calidad según las respuestas esperadas en 10 preguntas" in wiki.reasons[0]
+    assert "prueba un k mayor" in " ".join(wiki.reasons)
+    assert rag.headline == "Calidad similar: la búsqueda vectorial basta para tu corpus"

@@ -23,6 +23,8 @@ from ragwiki.rag import DEFAULT_K, Embedder, ask_rag
 from ragwiki.vault import STATE_DIR, Vault
 
 ARMS = ("wiki", "rag")
+# Expected answers that mean "the files do not answer this", in English and Spanish.
+NO_ANSWER = {"none", "no answer", "ninguna", "ninguno", "sin respuesta"}
 VERDICTS = ("wiki", "rag", "tie", "neither")
 COMPARISONS = "comparisons.jsonl"
 INGESTIONS = "ingestions.jsonl"
@@ -74,14 +76,15 @@ def check_expected(answer: ArmResult, expected: str) -> bool | None:
     """Whether an answer contains every key of the expected answer. None when there is none.
 
     Keys are separated by commas or semicolons, such as `ATP, mitochondria`. Matching
-    ignores case, accents and punctuation. For an unanswerable question write `none`: the
+    ignores case, accents and punctuation. For an unanswerable question write `none` (or
+    `ninguna`, `sin respuesta`): the
     answer is then correct only when the arm abstains. This is a deterministic first check,
     like the one in the study; a person's verdict decides the rest.
     """
     keys = [_normal(key) for key in re.split(r"[;,]", expected) if _normal(key)]
     if not keys:
         return None
-    if keys == ["none"]:
+    if len(keys) == 1 and keys[0] in NO_ANSWER:
         return not answer.found
     if not answer.found:
         return False
@@ -366,25 +369,81 @@ def _ratio(wiki: float | None, rag: float | None) -> str | None:
     return f"{wiki / rag:.1f}"
 
 
-def recommend(summary: Summary, k: int | None = None) -> Recommendation:
+MESSAGES = {
+    "en": {
+        "wait": "Not enough evidence yet: evaluate at least {n} questions",
+        "wait1": "{n} evaluated so far. Give questions an expected answer, or judge each pair of "
+        "answers, so the lab can compare quality.",
+        "wait2": "Use questions like the real ones you will ask, including some that join "
+        "several documents and some your files do not answer.",
+        "expected answers": "expected answers",
+        "your verdicts": "your verdicts",
+        "quality": "Quality from {basis} on {n} questions: wiki {wiki}, RAG {rag} (gap {gap}).",
+        "verdicts": "Your verdicts on {n} questions: wiki preferred {wiki}, RAG {rag}, "
+        "ties {ties}, neither right {neither}.",
+        "cost": "Each wiki question costs {x}× a RAG question.",
+        "tokens": "Each wiki question reads {x}× the tokens of a RAG question.",
+        "build": "Building the wiki cost ${usd} once; RAG has no building cost.",
+        "k": "RAG retrieved {k} paragraphs. In the study the wiki's lead shrank as RAG received "
+        "more context: try a larger k before adopting the wiki.",
+        "wiki_when": "The wiki pays off when your files change little and you ask many questions "
+        "that join several documents.",
+        "similar_why": "With similar quality, the cheaper and simpler architecture wins. Prefer "
+        "the wiki only if you value reading and browsing the pages it writes.",
+        "wiki": "The wiki answers your questions clearly better",
+        "rag": "RAG answers your questions better, and costs less",
+        "similar": "Similar quality: RAG is enough for your corpus",
+    },
+    "es": {
+        "wait": "Aún no hay evidencia suficiente: evalúa al menos {n} preguntas",
+        "wait1": "{n} evaluadas hasta ahora. Escribe una respuesta esperada o juzga cada par de "
+        "respuestas para que el laboratorio pueda comparar la calidad.",
+        "wait2": "Usa preguntas como las que de verdad harás, incluidas algunas que unan varios "
+        "documentos y otras que tus archivos no respondan.",
+        "expected answers": "las respuestas esperadas",
+        "your verdicts": "tus veredictos",
+        "quality": "Calidad según {basis} en {n} preguntas: WikiLLM {wiki}, búsqueda vectorial "
+        "{rag} (diferencia {gap}).",
+        "verdicts": "Tus veredictos en {n} preguntas: preferiste la WikiLLM {wiki}, la búsqueda "
+        "vectorial {rag}, empates {ties}, ninguna correcta {neither}.",
+        "cost": "Cada pregunta a la WikiLLM cuesta {x} veces lo de la búsqueda vectorial.",
+        "tokens": "Cada pregunta a la WikiLLM lee {x} veces los tokens de la búsqueda vectorial.",
+        "build": "Construir la WikiLLM costó {usd} USD una sola vez; la búsqueda vectorial no "
+        "tiene costo de construcción.",
+        "k": "La búsqueda vectorial recuperó {k} párrafos. En el estudio, la ventaja de la wiki "
+        "se redujo al darle más contexto: prueba un k mayor antes de adoptar la WikiLLM.",
+        "wiki_when": "La WikiLLM compensa cuando tus archivos cambian poco y haces muchas "
+        "preguntas que unen varios documentos.",
+        "similar_why": "Con calidad similar, gana la arquitectura más barata y simple. Prefiere la "
+        "WikiLLM solo si valoras leer y recorrer las páginas que escribe.",
+        "wiki": "La WikiLLM responde claramente mejor tus preguntas",
+        "rag": "La búsqueda vectorial responde mejor tus preguntas, y cuesta menos",
+        "similar": "Calidad similar: la búsqueda vectorial basta para tu corpus",
+    },
+}
+
+
+def recommend(summary: Summary, k: int | None = None, lang: str = "en") -> Recommendation:
     """Which architecture suits this corpus, from the person's own evidence.
 
     The rule follows the study behind ragwiki: the wiki is worth its higher cost only
     when it answers clearly better (a gap of at least 0.10); with similar quality the
-    cheaper retrieval wins. It needs five evaluated questions before deciding.
+    cheaper retrieval wins. It needs five evaluated questions before deciding. The text is
+    written in `lang` ("en" or "es").
     """
+    text = MESSAGES.get(lang, MESSAGES["en"])
+
+    def num(value: float, pattern: str) -> str:
+        shown = format(value, pattern)
+        return shown.replace(".", ",") if lang == "es" else shown
+
     quality = _quality(summary)
     if quality is None:
         evaluated = max(summary.judged, *(summary.arms[n].checked for n in ARMS))
         return Recommendation(
             "undecided",
-            f"Not enough evidence yet: evaluate at least {MIN_EVIDENCE} questions",
-            [
-                f"{evaluated} evaluated so far. Give questions an expected answer, or judge "
-                "each pair of answers, so the lab can compare quality.",
-                "Use questions like the real ones you will ask, including some that join "
-                "several documents and some your files do not answer.",
-            ],
+            text["wait"].format(n=MIN_EVIDENCE),
+            [text["wait1"].format(n=evaluated), text["wait2"]],
         )
     basis, count, rates = quality
     gap = rates["wiki"] - rates["rag"]
@@ -392,40 +451,39 @@ def recommend(summary: Summary, k: int | None = None) -> Recommendation:
     cost = _ratio(wiki.total_usd, rag.total_usd)
     tokens = _ratio(wiki.mean_input_tokens, rag.mean_input_tokens)
     reasons = [
-        f"Quality from {basis} on {count} questions: wiki {rates['wiki']:.2f}, "
-        f"RAG {rates['rag']:.2f} (gap {gap:+.2f}).",
+        text["quality"].format(
+            basis=text[basis],
+            n=count,
+            wiki=num(rates["wiki"], ".2f"),
+            rag=num(rates["rag"], ".2f"),
+            gap=num(gap, "+.2f"),
+        )
     ]
     if basis == "expected answers" and summary.judged:
         reasons.append(
-            f"Your verdicts on {summary.judged} questions: wiki preferred {wiki.preferred}, "
-            f"RAG {rag.preferred}, ties {summary.ties}, neither right {summary.neither}."
+            text["verdicts"].format(
+                n=summary.judged,
+                wiki=wiki.preferred,
+                rag=rag.preferred,
+                ties=summary.ties,
+                neither=summary.neither,
+            )
         )
     if cost:
-        reasons.append(f"Each wiki question costs {cost}× a RAG question.")
+        reasons.append(text["cost"].format(x=num(float(cost), ".1f")))
     elif tokens:
-        reasons.append(f"Each wiki question reads {tokens}× the tokens of a RAG question.")
+        reasons.append(text["tokens"].format(x=num(float(tokens), ".1f")))
     if summary.ingestion_usd is not None:
-        reasons.append(
-            f"Building the wiki cost ${summary.ingestion_usd:.4f} once; RAG has no building cost."
-        )
+        reasons.append(text["build"].format(usd=num(summary.ingestion_usd, ".4f")))
     if gap >= CLEAR_GAP:
         if k is not None and k < 15:
-            reasons.append(
-                f"RAG retrieved {k} paragraphs. In the study the wiki's lead shrank as RAG "
-                "received more context: try a larger k before adopting the wiki."
-            )
-        reasons.append(
-            "The wiki pays off when your files change little and you ask many questions "
-            "that join several documents."
-        )
-        return Recommendation("wiki", "The wiki answers your questions clearly better", reasons)
+            reasons.append(text["k"].format(k=k))
+        reasons.append(text["wiki_when"])
+        return Recommendation("wiki", text["wiki"], reasons)
     if gap <= -CLEAR_GAP:
-        return Recommendation("rag", "RAG answers your questions better, and costs less", reasons)
-    reasons.append(
-        "With similar quality, the cheaper and simpler architecture wins. Prefer the wiki only "
-        "if you value reading and browsing the pages it writes."
-    )
-    return Recommendation("rag", "Similar quality: RAG is enough for your corpus", reasons)
+        return Recommendation("rag", text["rag"], reasons)
+    reasons.append(text["similar_why"])
+    return Recommendation("rag", text["similar"], reasons)
 
 
 # --- answers with one architecture ------------------------------------------------------

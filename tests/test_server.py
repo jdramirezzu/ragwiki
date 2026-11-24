@@ -175,3 +175,23 @@ def test_unsupported_files_are_reported_not_added(client):
 
     assert response["added"] == []
     assert "only pdf" in response["failed"][0]["error"]
+
+
+def test_the_recommendation_can_be_asked_in_spanish(client):
+    advice = client.get("/api/summary", params={"lang": "es"}).json()["recommendation"]
+
+    assert advice["headline"].startswith("Aún no hay evidencia suficiente")
+
+
+def test_local_embeddings_switch_to_a_multilingual_model_for_spanish_files(client, lab):
+    spanish = (
+        "# Célula\n\nLa mitocondria produce la energía de la célula.\n\nEl núcleo guarda el ADN."
+    )
+    seen = []
+    lab.make_embedder = lambda config: seen.append(config.embedding_model) or FakeEmbedder()
+    client.post("/api/sources", files={"files": ("celula.md", spanish.encode(), "text/markdown")})
+
+    build = client.get("/api/build").json()
+
+    assert "paraphrase-multilingual-MiniLM-L12-v2" in build["rag"]["label"]
+    assert seen == ["sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]

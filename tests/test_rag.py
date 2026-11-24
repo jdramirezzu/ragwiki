@@ -120,3 +120,19 @@ def test_build_index_embeds_every_paragraph_once_and_reports_progress(vault, not
     assert (after.indexed, after.paragraphs, after.ready) == (2, 2, True)
     assert seen == [(2, 2)]
     assert embedder.batches == [["The cell is the unit of life.", "Mitochondria produce ATP."]]
+
+
+def test_the_default_local_model_follows_the_language_of_the_files(vault, note):
+    from ragwiki.ingest import add_source_only
+    from ragwiki.rag import LOCAL_MODEL, MULTILINGUAL_MODEL, default_local_model
+
+    assert default_local_model(vault) == LOCAL_MODEL
+    add_source_only(vault, note("cells.md", CELLS))
+    assert default_local_model(vault) == LOCAL_MODEL
+
+    spanish = (
+        "# Célula\n\nLa mitocondria produce la energía de la célula.\n\nEl núcleo guarda el ADN."
+    )
+    add_source_only(vault, note("celula.md", spanish))
+    add_source_only(vault, note("celula2.md", spanish.replace("Célula", "Células")))
+    assert default_local_model(vault) == MULTILINGUAL_MODEL

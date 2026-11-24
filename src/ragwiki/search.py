@@ -2,6 +2,7 @@
 
 import math
 import re
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass
 
@@ -15,8 +16,18 @@ class Hit:
     score: float
 
 
+def _fold(word: str) -> str:
+    """Drop accents and a plural -s, so "Páginas" and "pagina" are the same word.
+
+    People often type without accents, and a question may use the singular where the text
+    uses the plural. Short words are kept whole so "es" and "is" do not collapse.
+    """
+    plain = "".join(c for c in unicodedata.normalize("NFKD", word) if not unicodedata.combining(c))
+    return plain[:-1] if len(plain) > 3 and plain.endswith("s") else plain
+
+
 def tokenize(text: str) -> list[str]:
-    return re.findall(r"\w+", text.lower())
+    return [_fold(word) for word in re.findall(r"\w+", text.lower())]
 
 
 def rank(query: str, documents: dict[str, str], limit: int = 5) -> list[Hit]:

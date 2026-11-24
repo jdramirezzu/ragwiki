@@ -64,6 +64,17 @@ clave se guarda en memoria, nunca en disco) o con las variables `RAGWIKI_*` de m
 | Mejor para | Datos puntuales; archivos que cambian seguido | Preguntas que unen varios documentos |
 | Además obtienes | Nada para leer | Una wiki enlazada que puedes recorrer en Obsidian |
 
+### Español e inglés
+
+La página del laboratorio está en español y en inglés (cambia con ES / EN; al principio sigue
+el idioma del navegador). Las respuestas y el «no está en tus archivos» salen en el idioma de
+la pregunta. La búsqueda por palabras ignora tildes y plurales simples, así que `informacion`
+encuentra `información`. Con embeddings locales, los archivos en español usan un modelo
+multilingüe (`paraphrase-multilingual-MiniLM-L12-v2`) y los archivos en inglés conservan el
+`bge-small-en-v1.5` del estudio. En documentos en español, el modelo multilingüe puso el
+documento correcto en primer lugar 7 de 11 veces, frente a 3 del modelo en inglés. Como
+respuesta esperada para «sin respuesta» sirven `none`, `ninguna` y `sin respuesta`.
+
 ## Línea de comandos
 
 ragwiki todavía no está en PyPI. Se instala desde un clon con

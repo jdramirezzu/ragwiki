@@ -58,6 +58,7 @@ from ragwiki.rag import (
     LocalEmbedder,
     OpenAICompatibleEmbedder,
     build_index,
+    default_local_model,
     index_status,
 )
 from ragwiki.vault import STATE_DIR, Vault, VaultError
@@ -191,11 +192,19 @@ class Lab:
             )
         return self.metered
 
+    def embedding_model(self) -> str:
+        """The model in use: the one chosen, or for local embeddings one fit for the files."""
+        if self.config.embedding_model or self.config.retrieval != "local" or not self.vault:
+            return self.config.embedding_model
+        return default_local_model(self.vault)
+
     def embedder(self) -> Embedder | None:
         """Kept between requests: a local model takes a few seconds to load."""
-        key = (self.config.retrieval, self.config.embedding_model, self.config.base_url)
+        model = self.embedding_model()
+        key = (self.config.retrieval, model, self.config.base_url)
         if self._embedder is None or self._embedder[0] != key:
-            self._embedder = (key, self.make_embedder(self.config))
+            config = self.config.model_copy(update={"embedding_model": model})
+            self._embedder = (key, self.make_embedder(config))
         return self._embedder[1]
 
     def priced(self) -> bool:
@@ -240,7 +249,7 @@ def _state(lab: Lab) -> dict:
         "types": list(LAB_TYPES),
         "suggested": lab.suggested,
         "local_embeddings": _local_available(),
-        "local_model": LOCAL_MODEL,
+        "local_model": lab.embedding_model() or LOCAL_MODEL,
     }
     state["session"] = {
         "calls": lab.metered.calls if lab.metered else 0,
@@ -257,11 +266,12 @@ def _state(lab: Lab) -> dict:
     }
 
 
-def _retrieval_label(config: Config) -> str:
-    if config.retrieval == "local":
-        return f"local embeddings ({config.embedding_model or LOCAL_MODEL})"
-    if config.retrieval == "provider":
-        return f"provider embeddings ({config.embedding_model or 'not set'})"
+def _retrieval_label(lab: Lab) -> str:
+    model = lab.embedding_model()
+    if lab.config.retrieval == "local":
+        return f"local embeddings ({model or LOCAL_MODEL})"
+    if lab.config.retrieval == "provider":
+        return f"provider embeddings ({model or 'not set'})"
     return "keyword search (BM25)"
 
 
@@ -290,7 +300,7 @@ def _build_state(lab: Lab) -> dict:
             )
             lab.estimates[key] = asdict(estimate)
         wiki["estimate"] = lab.estimates[key]
-    rag = {"retrieval": lab.config.retrieval, "label": _retrieval_label(lab.config)}
+    rag = {"retrieval": lab.config.retrieval, "label": _retrieval_label(lab)}
     if lab.config.retrieval == "bm25":
         paragraphs = sum(len(vault.load_source(key).paragraphs) for key in sources)
         rag |= {"indexed": paragraphs, "paragraphs": paragraphs, "ready": bool(paragraphs)}
@@ -517,10 +527,11 @@ def create_app(lab: Lab) -> FastAPI:
         return {"ok": True}
 
     @app.get("/api/summary")
-    def summary(k: int | None = None) -> dict:
+    def summary(k: int | None = None, lang: str = "en") -> dict:
         vault = lab.need_vault()
         result = summarize(load_comparisons(vault), load_ingestions(vault))
-        return {"summary": asdict(result), "recommendation": asdict(recommend(result, k=k))}
+        advice = recommend(result, k=k, lang=lang)
+        return {"summary": asdict(result), "recommendation": asdict(advice)}
 
     @app.get("/api/citation")
     def citation(c: str) -> dict:

@@ -62,6 +62,17 @@ in memory, never written to disk) or with the `RAGWIKI_*` variables below.
 | Best at | Single facts; files that change often | Questions that join several documents |
 | You also get | Nothing to read | A linked wiki you can browse in Obsidian |
 
+### Spanish and English
+
+The lab's page is in Spanish and English (switch with ES / EN; it follows the browser at
+first). Answers and "not in your files" come in the language of the question. Keyword search
+ignores accents and simple plurals, so `informacion` finds `información`. With local
+embeddings, Spanish files get a multilingual model
+(`paraphrase-multilingual-MiniLM-L12-v2`); English files keep the study's `bge-small-en-v1.5`.
+On Spanish documents the multilingual model put the right document first 7 times in 11,
+against 3 for the English one. For "no answer" expected answers, `none`, `ninguna` and
+`sin respuesta` all work.
+
 ## Command line
 
 ragwiki is not on PyPI yet. Install it from a clone with [uv](https://docs.astral.sh/uv/):

@@ -24,7 +24,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 SECTIONS = {"es": "## Español", "en": "## English"}
-WINDOWS = [4.5, 9.0, 4.2, 7.6, 9.6, 4.6, 5.6, 7.6, 4.6, 7.6, 9.6, 6.6, 7.2]
+WINDOWS = [4.5, 9.0, 4.2, 7.6, 9.6, 4.6, 5.6, 7.6, 4.6, 7.6, 8.6, 9.6, 6.6, 7.2]
 BOLD, DIM, YELLOW, GREEN, RED, RESET = (
     "\033[1m",
     "\033[2m",

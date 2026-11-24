@@ -49,6 +49,11 @@ p.lead{font-size:36px;line-height:1.35;color:#d9d5cc;max-width:1400px;margin:28p
 .cap .step{font:700 26px var(--mono);color:var(--bg);background:var(--gold);padding:8px 16px;border-radius:10px;white-space:nowrap}
 .cap .txt{font-size:34px;line-height:1.25}
 .cap .txt b{color:var(--gold);font-weight:650}
+/* demo badge: the person connects their own model; this run used ours */
+.badge{position:absolute;right:150px;top:42px;display:flex;align-items:center;gap:12px;font:600 22px var(--sans);
+  color:var(--ink);background:rgba(24,27,43,.92);border:1px solid #3a3f63;border-radius:999px;padding:10px 22px}
+.badge i{width:12px;height:12px;border-radius:50%;background:var(--gold);display:block}
+.badge b{color:var(--gold);font-weight:650}
 /* advantages */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:56px}
 .card{background:var(--bg2);border:1px solid #2b3050;border-radius:24px;padding:34px 36px;min-height:250px}
@@ -177,8 +182,22 @@ p.lead{font-size:36px;line-height:1.35;color:#d9d5cc;max-width:1400px;margin:28p
   <div class="cap a" data-at="0.4"><span class="step" data-t="step4"></span><span class="txt" data-t="cap5"></span></div>
 </section>
 
+<!-- S8b kinds of RAG -->
+<section class="scene" data-s="69" data-e="78.2">
+  <div class="frame a" data-at="0">
+    <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765/#variants</span></div>
+    <div class="view"><img src="shots/08-kinds.png" data-pan="1"></div>
+  </div>
+  <div class="cap a" data-at="0.4"><span class="step" data-t="step5"></span><span class="txt" data-t="cap6"></span></div>
+</section>
+
+<!-- the demo runs on our key; every person connects their own model -->
+<section class="scene" data-s="19" data-e="78.2">
+  <div class="badge a" data-at="0.3"><i></i><span data-t="badge"></span></div>
+</section>
+
 <!-- S9 advantages -->
-<section class="scene" data-s="69" data-e="79.2">
+<section class="scene" data-s="78" data-e="88.2">
   <div class="eyebrow a" data-at="0.1" data-t="s9eyebrow"></div>
   <h2 class="a" data-at="0.3" data-t="s9title"></h2>
   <div class="grid">
@@ -192,7 +211,7 @@ p.lead{font-size:36px;line-height:1.35;color:#d9d5cc;max-width:1400px;margin:28p
 </section>
 
 <!-- S10 research -->
-<section class="scene" data-s="79" data-e="86.2">
+<section class="scene" data-s="88" data-e="95.2">
   <div class="eyebrow a" data-at="0.1" data-t="s10eyebrow"></div>
   <h2 class="a" data-at="0.3" data-t="s10title"></h2>
   <div class="nums">
@@ -204,7 +223,7 @@ p.lead{font-size:36px;line-height:1.35;color:#d9d5cc;max-width:1400px;margin:28p
 </section>
 
 <!-- S11 call to action -->
-<section class="scene center" data-s="86" data-e="94">
+<section class="scene center" data-s="95" data-e="103">
   <div class="mark a" data-at="0.1" style="margin-bottom:20px"><i class="w" style="width:30px;height:64px"></i><i class="r" style="width:30px;height:64px"></i></div>
   <h2 class="a" data-at="0.3" data-t="s11title"></h2>
   <div class="code a" data-at="1.0"><div><span class="p">$</span> git clone https://github.com/jdramirezzu/ragwiki.git</div><div><span class="p">$</span> cd ragwiki && uv sync --extra lab</div><div><span class="p">$</span> uv run ragwiki lab ~/my-lab</div></div>
@@ -216,7 +235,7 @@ p.lead{font-size:36px;line-height:1.35;color:#d9d5cc;max-width:1400px;margin:28p
 <script>
 const TEXT = {
   es: {
-    tagline: "¿Búsqueda vectorial o WikiLLM? Construye cualquiera con tus documentos y deja que tus preguntas decidan.",
+    tagline: "¿Búsqueda vectorial, WikiLLM u otro tipo de RAG? Constrúyelos con tus documentos y deja que tus preguntas decidan.",
     s1eyebrow: "Dos formas de darle tus documentos a un LLM", s1title: "Lo único que cambia es <i>cuándo</i> se hace el trabajo",
     ragname: "Búsqueda vectorial (RAG)", ragsub: "Busca los párrafos más cercanos en cada pregunta",
     nq: "pregunta", nclosest: "k párrafos", ncall: "1 llamada al modelo",
@@ -238,16 +257,19 @@ const TEXT = {
     a1h: "Una sola variable", a1p: "El mismo modelo responde con las dos arquitecturas: lo único que cambia es cómo le llega el conocimiento.",
     a2h: "Costo antes de gastar", a2p: "Estimación previa y registro real de tokens, tiempo y dólares de cada llamada, con tope de gasto.",
     a3h: "Citas verificadas", a3p: "Una cita solo sobrevive si apunta a un párrafo real; si no hay respuesta, lo dice.",
-    a4h: "Tus archivos se quedan contigo", a4p: "Corre en tu computador; los embeddings son locales. Solo salen las llamadas al modelo.",
-    a5h: "Cualquier modelo", a5p: "Cualquier endpoint compatible con OpenAI: DeepSeek, Gemini, OpenAI u Ollama en local.",
+    a4h: "Tus archivos se quedan contigo", a4p: "Corre en tu computador, en español o inglés; los embeddings son locales. Solo salen las llamadas al modelo.",
+    a5h: "Tu modelo, tu clave", a5p: "Conecta tu propio modelo con tu clave de API: DeepSeek, Gemini, OpenAI u Ollama en local. Esta demo usa la nuestra.",
     a6h: "Código abierto", a6p: "Licencia MIT, en Python, con pruebas e integración continua. La wiki es Markdown que abre en Obsidian.",
     s10eyebrow: "Nace de una investigación", s10title: "100 artículos de arXiv, 100 preguntas, el mismo modelo",
     n1: "aciertos de la WikiLLM frente al RAG con 5 párrafos recuperados", n2: "el costo por pregunta de la WikiLLM, más su construcción", n3: "de ventaja con 20 párrafos: ya no es significativa",
     s10foot: "Proyecto de maestría en IA aplicada, Universidad Icesi. La respuesta depende del corpus: por eso existe ragwiki.",
     s11title: "Pruébalo con tus documentos", s11small: "Juan Diego Ramírez · Juan David Cruz García · MIT",
+    step5: "5 · Tipos de RAG",
+    cap6: "Compara búsqueda por palabras, vectorial, híbrida y con reordenador sobre tus preguntas, <b>gratis</b>, y paga solo por la mejor.",
+    badge: "Demo con <b>nuestra clave de DeepSeek</b> · tú conectas tu propio modelo",
   },
   en: {
-    tagline: "Vector search or a WikiLLM? Build either one from your documents and let your questions decide.",
+    tagline: "Vector search, a WikiLLM or another kind of RAG? Build them from your documents and let your questions decide.",
     s1eyebrow: "Two ways to give an LLM your documents", s1title: "What changes is <i>when</i> the work happens",
     ragname: "Vector search (RAG)", ragsub: "Finds the closest paragraphs at every question",
     nq: "question", nclosest: "k paragraphs", ncall: "1 model call",
@@ -269,13 +291,16 @@ const TEXT = {
     a1h: "One variable", a1p: "The same model answers with both architectures: only the way knowledge reaches it changes.",
     a2h: "Cost before spending", a2p: "An estimate first, then the real tokens, time and dollars of every call, with a spending cap.",
     a3h: "Verified citations", a3p: "A citation survives only if it points to a real paragraph; with no answer, it says so.",
-    a4h: "Your files stay yours", a4p: "Runs on your computer; embeddings are local. Only the model calls leave it.",
-    a5h: "Any model", a5p: "Any OpenAI-compatible endpoint: DeepSeek, Gemini, OpenAI or a local Ollama.",
+    a4h: "Your files stay yours", a4p: "Runs on your computer, in English or Spanish; embeddings are local. Only the model calls leave it.",
+    a5h: "Your model, your key", a5p: "Connect your own model with your API key: DeepSeek, Gemini, OpenAI or a local Ollama. This demo uses ours.",
     a6h: "Open source", a6p: "MIT-licensed Python with tests and CI. The wiki is Markdown that opens in Obsidian.",
     s10eyebrow: "Born from research", s10title: "100 arXiv papers, 100 questions, the same model",
     n1: "correct answers, WikiLLM vs RAG with 5 retrieved paragraphs", n2: "the WikiLLM's cost per question, plus building it", n3: "lead with 20 paragraphs: no longer significant",
     s10foot: "Master's project in applied AI, Universidad Icesi. The answer depends on the corpus: that is why ragwiki exists.",
     s11title: "Try it on your documents", s11small: "Juan Diego Ramírez · Juan David Cruz García · MIT",
+    step5: "5 · Kinds of RAG",
+    cap6: "Compare keyword, vector, hybrid and reranked search on your questions <b>for free</b>, then pay only for the best.",
+    badge: "Demo on <b>our own DeepSeek key</b> · you connect your own model",
   },
 };
 const lang = new URLSearchParams(location.search).get("lang") || "es";

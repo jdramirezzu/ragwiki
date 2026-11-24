@@ -195,3 +195,58 @@ def test_local_embeddings_switch_to_a_multilingual_model_for_spanish_files(clien
 
     assert "paraphrase-multilingual-MiniLM-L12-v2" in build["rag"]["label"]
     assert seen == ["sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
+
+
+class FirstWins:
+    name = "fake/reranker"
+
+    def scores(self, question, texts):
+        return [float(-i) for i in range(len(texts))]
+
+
+def test_compare_kinds_of_rag_for_free_then_answer_with_two(client, lab):
+    lab.make_reranker = lambda model: FirstWins()
+    client.post("/api/sources", files={"files": MD})
+    names = client.get("/api/state").json()["variants"]
+    assert names[:3] == ["bm25", "vector", "hybrid"]
+    questions = [{"question": "Which organelle produces ATP?", "expected": "mitochondria"}]
+
+    job = client.post(
+        "/api/variants/search", json={"questions": questions, "variants": names, "k": 2}
+    ).json()
+    done = wait(client, job)
+
+    assert done["status"] == "done", done
+    assert [s["variant"] for s in done["result"]["scores"]] == names
+    assert all(s["checked"] == 1 for s in done["result"]["scores"])
+    assert done["result"]["best"] in names
+    assert lab.scripted.calls == []
+    assert client.get("/api/variants/search").json()["id"] == done["result"]["id"]
+
+    reply = '{"found": true, "text": "Mitochondria [[src-cell-biology#^p2]]."}'
+    lab.scripted.replies = [reply, reply]
+    job = client.post(
+        "/api/variants/answer",
+        json={"questions": questions, "variants": ["bm25", "hybrid+rerank"], "k": 2},
+    ).json()
+    done = wait(client, job)
+
+    assert done["status"] == "done", done
+    assert [r["variant"] for r in done["result"]] == ["bm25", "hybrid+rerank"]
+    assert [r["correct"] for r in done["result"]] == [True, True]
+    assert done["events"][-1] == {
+        "number": 2,
+        "total": 2,
+        "question": questions[0]["question"],
+        "variant": "hybrid+rerank",
+    }
+    assert len(client.get("/api/variants/answers").json()) == 2
+
+
+def test_unknown_kinds_of_rag_are_refused(client):
+    client.post("/api/sources", files={"files": MD})
+    response = client.post(
+        "/api/variants/search",
+        json={"questions": [{"question": "q"}], "variants": ["bm25+magic"]},
+    )
+    assert response.status_code == 400

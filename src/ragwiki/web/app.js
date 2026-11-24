@@ -4,8 +4,8 @@ import { language, pickLanguage, setLanguage, t } from "./i18n.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { data: null, build: null, k: 8, mode: "both" };
-const TABS = ["sources", "build", "ask", "results"];
+const state = { data: null, build: null, k: 8, mode: "both", chosen: null, bench: null, vanswers: [] };
+const TABS = ["sources", "build", "ask", "results", "variants"];
 
 // --- helpers -------------------------------------------------------------------------
 
@@ -165,6 +165,7 @@ function selectTab(tab) {
   if (tab === "build") refreshBuild();
   if (tab === "ask") loadAnswers();
   if (tab === "results") loadResults();
+  if (tab === "variants") loadVariants();
 }
 
 // --- settings ------------------------------------------------------------------------
@@ -517,6 +518,134 @@ async function loadResults() {
     : `<tbody><tr><td class="empty-state">${t("noResults")}</td></tr></tbody>`;
 }
 
+// --- 5 · kinds of RAG ----------------------------------------------------------------
+
+const kindName = (v) => { const label = t(`v_${v}`); return label === `v_${v}` ? escape(v) : label; };
+const kindNote = (v) => { const note = t(`v_${v}_d`); return note === `v_${v}_d` ? "" : note; };
+
+function variantItems() {
+  return $("#vQuestions").value.split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
+    const [question, expected = ""] = line.split("|").map((part) => part.trim());
+    return { question, expected };
+  }).filter((q) => q.question);
+}
+
+function chosenVariants() {
+  return $$("#variantList input:checked").map((box) => box.value);
+}
+
+function updateVariantButtons() {
+  const n = variantItems().length * chosenVariants().length;
+  $("#vAnswer").textContent = t("vAnswer", { n });
+  $("#vHint").textContent = t("vHint");
+}
+
+function renderVariantList() {
+  const names = state.data?.variants ?? [];
+  state.chosen ??= new Set(names);
+  $("#variantList").innerHTML = names.map((v) => `
+    <label class="vkind"><input type="checkbox" value="${escape(v)}"${state.chosen.has(v) ? " checked" : ""}>
+      <span>${kindName(v)}</span><small>${kindNote(v)}</small></label>`).join("");
+  updateVariantButtons();
+}
+
+function benchHTML(bench) {
+  if (!bench) return "";
+  const best = bench.scores.find((s) => s.variant === bench.best);
+  const head = best
+    ? `<p class="eyebrow">${t("recommendation")}</p><h2>${t("vBest", { name: kindName(best.variant) })}</h2><ul><li>${t("vBestWhy", { k: bench.k, found: best.found, checked: best.checked })}</li></ul>`
+    : `<h2>${t("vNoBest")}</h2>`;
+  const rows = bench.scores.map((s) => `<tr class="${s.variant === bench.best ? "best" : ""}">
+      <td>${kindName(s.variant)}</td>
+      <td class="num">${s.checked ? `${s.found} / ${s.checked}` : t("vNotScored")}</td>
+      <td class="num">${s.checked ? decimal(s.mrr.toFixed(2)) : "—"}</td>
+      <td class="num">${secs(s.seconds)}</td></tr>`).join("");
+  return `<div class="advice rag">${head}</div>
+    <div class="tablewrap"><table class="vtable"><thead><tr><th>${t("vThKind")}</th><th class="num">${t("vThFound", { k: bench.k })}</th><th class="num">${t("vThMrr")}</th><th class="num">${t("vThTime")}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="hint">${t("vMrrNote")}</p>`;
+}
+
+function variantAnswersHTML(records) {
+  if (!records.length) return "";
+  const kinds = [...new Set(records.map((r) => r.variant))];
+  const rows = kinds.map((v) => {
+    const mine = records.filter((r) => r.variant === v);
+    const checked = mine.filter((r) => r.correct !== null);
+    const usd = mine.some((r) => r.result.usd === null) ? null : mine.reduce((sum, r) => sum + r.result.usd, 0);
+    const tokens = mine.reduce((sum, r) => sum + r.result.input_tokens, 0) / mine.length;
+    return `<tr><td>${kindName(v)}</td>
+      <td class="num">${checked.length ? `${checked.filter((r) => r.correct).length} / ${checked.length}` : t("vNotScored")}</td>
+      <td class="num">${num(tokens)}</td><td class="num">${money(usd)}</td></tr>`;
+  }).join("");
+  const questions = [...new Set(records.map((r) => r.question))];
+  const mark = (v) => (v === null ? `<span class="dot"></span>` : `<span class="dot ${v ? "yes" : "no"}"></span>`);
+  const detail = questions.map((q) => `<div class="vq"><h4>${escape(q)}</h4>${
+    records.filter((r) => r.question === q).map((r) => `<div class="va"><b>${mark(r.correct)} ${kindName(r.variant)}</b><div>${render(r.result.text, "rag")}</div></div>`).join("")
+  }</div>`).join("");
+  return `<h2>${t("vAnswersTitle")}</h2>
+    <div class="tablewrap"><table class="vtable"><thead><tr><th>${t("vThKind")}</th><th class="num">${t("vThCorrect")}</th><th class="num">${t("vThTokens")}</th><th class="num">${t("vThCost")}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <details class="vdetail"><summary>${t("vPerQuestion")}</summary>${detail}</details>`;
+}
+
+function renderVariants() {
+  renderVariantList();
+  $("#vBench").innerHTML = benchHTML(state.bench);
+  $("#vAnswers").innerHTML = variantAnswersHTML(state.vanswers);
+}
+
+async function loadVariants() {
+  if (!state.data?.vault) return;
+  [state.bench, state.vanswers] = await Promise.all([api("/api/variants/search"), api("/api/variants/answers")]);
+  renderVariants();
+}
+
+async function useSavedQuestions() {
+  const items = (await api("/api/comparisons")).filter((i) => i.expected);
+  if (!items.length) { toast(t("vNoSaved"), true); return; }
+  const lines = [...new Map(items.map((i) => [i.question, `${i.question} | ${i.expected}`])).values()];
+  $("#vQuestions").value = lines.join("\n");
+  updateVariantButtons();
+}
+
+function variantRequest() {
+  const questions = variantItems();
+  const variants = chosenVariants();
+  if (!variants.length) { toast(t("vPickOne"), true); return null; }
+  if (!questions.length) { toast(t("writeOne"), true); return null; }
+  return { questions, variants, k: Number($("#vK").value) || 8 };
+}
+
+async function runVariants(button, path, describe) {
+  const request = variantRequest();
+  if (!request) return;
+  button.disabled = true;
+  try {
+    const job = await send(path, "POST", request);
+    const done = await follow(job, $("#vLog"), (j) => (j.error ? `<div class="bad">✗ ${escape(j.error)}</div>` : describe(j, request)));
+    if (done.status === "done") await loadVariants();
+  } catch (error) {
+    toast(error.message, true);
+  }
+  button.disabled = false;
+  await refresh();
+}
+
+function searchVariants() {
+  if (!variantItems().some((q) => q.expected)) { toast(t("vNeedExpected"), true); return; }
+  runVariants($("#vSearch"), "/api/variants/search", (j, r) => (j.status === "running"
+    ? `<div class="now">${t("vSearching", { n: r.variants.length })}</div>`
+    : `<div class="good">✓ ${t("vSearched")}</div>`));
+}
+
+function answerVariants() {
+  if (!state.data.config.model) { openSettings(); return; }
+  runVariants($("#vAnswer"), "/api/variants/answer", (j, r) => {
+    const last = j.events.at(-1);
+    if (j.status === "running") return `<div class="now">${t("vAnswering", { variant: kindName(last?.variant ?? r.variants[0]), n: last?.number ?? 1, total: last?.total ?? 1 })}</div>`;
+    return `<div class="good">✓ ${t("vAnswered", { n: j.result.length })}</div>`;
+  });
+}
+
 // --- language ------------------------------------------------------------------------
 
 function applyLanguage(lang) {
@@ -525,6 +654,7 @@ function applyLanguage(lang) {
   $("#kLabel").innerHTML = t("kLabel", { k: state.k });
   for (const el of $$(".dec")) el.innerHTML = decimal(el.innerHTML);
   if (language() === "en") for (const el of $$(".dec")) el.innerHTML = el.innerHTML.replace(",", ".");
+  if (state.data) renderVariants();
 }
 
 // --- wiring --------------------------------------------------------------------------
@@ -585,6 +715,18 @@ function wire() {
     if (!e.target.classList.contains("note")) return;
     const card = e.target.closest(".cmp");
     saveVerdict(card, card.querySelector("[data-verdict][aria-pressed=true]")?.dataset.verdict ?? null);
+  });
+  $("#variantList").addEventListener("change", () => {
+    state.chosen = new Set(chosenVariants());
+    updateVariantButtons();
+  });
+  $("#vQuestions").addEventListener("input", updateVariantButtons);
+  $("#vUseSaved").addEventListener("click", () => useSavedQuestions().catch((err) => toast(err.message, true)));
+  $("#vSearch").addEventListener("click", searchVariants);
+  $("#vAnswer").addEventListener("click", answerVariants);
+  $("#vAnswers").addEventListener("click", (e) => {
+    const cite = e.target.closest(".cite");
+    if (cite) showCitation(cite);
   });
   $("#drawerClose").addEventListener("click", closeDrawer);
   addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });

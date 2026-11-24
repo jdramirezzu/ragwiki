@@ -61,6 +61,17 @@ from ragwiki.rag import (
     default_local_model,
     index_status,
 )
+from ragwiki.variants import (
+    PRESETS,
+    LocalReranker,
+    Reranker,
+    Variant,
+    answer_variants,
+    default_rerank_model,
+    load_benches,
+    load_variant_answers,
+    search_bench,
+)
 from ragwiki.vault import STATE_DIR, Vault, VaultError
 
 WEB = Path(__file__).with_name("web")
@@ -114,6 +125,21 @@ class AskRequest(BaseModel):
     k: int = Field(DEFAULT_K, ge=1, le=50)
 
 
+class VariantsRequest(BaseModel):
+    questions: list[Question] = Field(min_length=1)
+    variants: list[str] = Field(min_length=1)
+    k: int = Field(DEFAULT_K, ge=1, le=50)
+
+    def parsed(self) -> list[Variant]:
+        try:
+            return list(dict.fromkeys(Variant.parse(name) for name in self.variants))
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+
+    def items(self) -> list[tuple[str, str]]:
+        return [(q.question.strip(), q.expected) for q in self.questions]
+
+
 class VerdictRequest(BaseModel):
     verdict: str | None = None
     note: str = ""
@@ -163,6 +189,7 @@ class Lab:
         config: Config,
         make_model: Callable[[Config], Model] | None = None,
         make_embedder: Callable[[Config], Embedder | None] | None = None,
+        make_reranker: Callable[[str], Reranker] | None = None,
     ) -> None:
         self.vault: Vault | None = None
         self.config = config
@@ -170,6 +197,8 @@ class Lab:
             lambda c: OpenAICompatibleModel(c.model, c.base_url or None, c.api_key or None)
         )
         self.make_embedder = make_embedder or default_embedder
+        self.make_reranker = make_reranker or LocalReranker
+        self._reranker: tuple[str, Reranker] | None = None
         self.metered: MeteredModel | None = None
         self._embedder: tuple[tuple, Embedder | None] | None = None
         self.jobs: dict[str, dict] = {}
@@ -206,6 +235,23 @@ class Lab:
             config = self.config.model_copy(update={"embedding_model": model})
             self._embedder = (key, self.make_embedder(config))
         return self._embedder[1]
+
+    def variant_embedder(self) -> Embedder | None:
+        """The search's embedder; with keyword search, local embeddings when installed."""
+        embedder = self.embedder()
+        if embedder is not None or not self.vault or not _local_available():
+            return embedder
+        local = self.config.model_copy(
+            update={"retrieval": "local", "embedding_model": default_local_model(self.vault)}
+        )
+        return self.make_embedder(local)
+
+    def reranker(self) -> Reranker:
+        """Kept between requests, like the embedder: loading a reranker takes seconds."""
+        model = default_rerank_model(self.need_vault())
+        if self._reranker is None or self._reranker[0] != model:
+            self._reranker = (model, self.make_reranker(model))
+        return self._reranker[1]
 
     def priced(self) -> bool:
         return self.config.price_input > 0 or self.config.price_output > 0
@@ -250,6 +296,7 @@ def _state(lab: Lab) -> dict:
         "suggested": lab.suggested,
         "local_embeddings": _local_available(),
         "local_model": lab.embedding_model() or LOCAL_MODEL,
+        "variants": [variant.name for variant in PRESETS],
     }
     state["session"] = {
         "calls": lab.metered.calls if lab.metered else 0,
@@ -503,6 +550,63 @@ def create_app(lab: Lab) -> FastAPI:
             return done
 
         return lab.start("compare", work)
+
+    # --- kinds of RAG ---------------------------------------------------------------
+
+    @app.post("/api/variants/search")
+    def start_variant_search(request: VariantsRequest) -> dict:
+        vault = lab.need_vault()
+        variants = request.parsed()
+
+        def work(job: dict) -> dict:
+            job["events"].append({"step": "search", "variants": len(variants)})
+            bench = search_bench(
+                vault,
+                request.items(),
+                variants,
+                k=request.k,
+                embedder=lab.variant_embedder() if any(v.needs_vectors for v in variants) else None,
+                reranker=lab.reranker() if any(v.rerank for v in variants) else None,
+            )
+            return asdict(bench) | {"best": bench.best}
+
+        return lab.start("variant-search", work)
+
+    @app.get("/api/variants/search")
+    def last_variant_search() -> dict | None:
+        benches = load_benches(lab.need_vault())
+        return asdict(benches[-1]) | {"best": benches[-1].best} if benches else None
+
+    @app.post("/api/variants/answer")
+    def start_variant_answers(request: VariantsRequest) -> dict:
+        vault = lab.need_vault()
+        variants = request.parsed()
+        model = lab.model()
+        prices = (lab.config.price_input, lab.config.price_output)
+
+        def work(job: dict) -> list[dict]:
+            def progress(done: int, total: int, question: str, variant: str) -> None:
+                job["events"].append(
+                    {"number": done + 1, "total": total, "question": question, "variant": variant}
+                )
+
+            return answer_variants(
+                vault,
+                model,
+                request.items(),
+                variants,
+                k=request.k,
+                embedder=lab.variant_embedder() if any(v.needs_vectors for v in variants) else None,
+                reranker=lab.reranker() if any(v.rerank for v in variants) else None,
+                prices=prices,
+                on_progress=progress,
+            )
+
+        return lab.start("variant-answer", work)
+
+    @app.get("/api/variants/answers")
+    def variant_answers() -> list[dict]:
+        return load_variant_answers(lab.need_vault())
 
     @app.get("/api/jobs/{job_id}")
     def job(job_id: str) -> dict:

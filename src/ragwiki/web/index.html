@@ -46,6 +46,7 @@
       <button role="tab" aria-controls="build" aria-selected="false"><span>2</span><b data-i18n="tabBuild"></b></button>
       <button role="tab" aria-controls="ask" aria-selected="false"><span>3</span><b data-i18n="tabAsk"></b></button>
       <button role="tab" aria-controls="results" aria-selected="false"><span>4</span><b data-i18n="tabResults"></b></button>
+      <button role="tab" aria-controls="variants" aria-selected="false"><span>5</span><b data-i18n="tabVariants"></b></button>
     </nav>
 
     <!-- 1 · files -->
@@ -199,6 +200,33 @@
         <summary data-i18n="readTitle"></summary>
         <ul><li data-i18n="read1"></li><li data-i18n="read2"></li><li data-i18n="read3"></li></ul>
       </details>
+    </div>
+
+    <!-- 5 · kinds of RAG -->
+    <div role="tabpanel" id="variants" class="panel" hidden>
+      <h2 data-i18n="vTitle"></h2>
+      <p class="sub" data-i18n="vSub"></p>
+      <div class="vgrid">
+        <fieldset class="vkinds">
+          <legend data-i18n="vKinds"></legend>
+          <div id="variantList"></div>
+          <label class="vk"><span data-i18n="vK"></span> <input type="number" id="vK" min="1" max="50" value="8"></label>
+        </fieldset>
+        <div class="vquestions">
+          <label for="vQuestions" data-i18n="vQuestions"></label>
+          <textarea id="vQuestions" rows="7" spellcheck="false" data-i18n-ph="vQuestionsPh"></textarea>
+          <button class="btn ghost" id="vUseSaved" type="button" data-i18n="vUseSaved"></button>
+        </div>
+      </div>
+      <p class="hint vhint" id="vHint"></p>
+      <div class="composer-foot">
+        <span class="spacer"></span>
+        <button class="btn primary" id="vSearch" type="button" data-i18n="vSearch"></button>
+        <button class="btn" id="vAnswer" type="button"></button>
+      </div>
+      <div id="vLog" class="log" hidden aria-live="polite"></div>
+      <div id="vBench"></div>
+      <div id="vAnswers"></div>
     </div>
   </section>
 </main>

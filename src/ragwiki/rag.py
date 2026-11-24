@@ -275,16 +275,21 @@ def ask_rag(
     *,
     k: int = DEFAULT_K,
     embedder: Embedder | None = None,
+    passages: list[Passage] | None = None,
+    retrieval: str | None = None,
 ) -> RagAnswer:
     """Answer from the `k` most similar source paragraphs, with one model call.
 
     Citations that are not among the retrieved paragraphs are removed. An answer left
-    without citations becomes an abstention, as in `ask`.
+    without citations becomes an abstention, as in `ask`. Other retrieval recipes
+    (`ragwiki.variants`) pass their own `passages` and a `retrieval` label.
     """
     if k < 1:
         raise ConfigError(f"k must be at least 1, got {k}")
-    passages = retrieve(vault, question, k, embedder)
-    retrieval = f"embeddings:{embedder.name}" if embedder else "bm25"
+    if passages is None:
+        passages = retrieve(vault, question, k, embedder)
+    if retrieval is None:
+        retrieval = f"embeddings:{embedder.name}" if embedder else "bm25"
     if not passages:
         return RagAnswer(not_found(question), False, retrieval=retrieval)
     prompt = _prompt(question, passages)

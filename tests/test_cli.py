@@ -1,3 +1,5 @@
+import re
+
 from conftest import ScriptedModel
 from files import PNG
 from test_ingest import CELLS, PART_1, PART_2, PLAN, SMALL_WINDOW, TRANSCRIPTION, WRITE
@@ -111,7 +113,7 @@ def test_add_asks_before_spending_and_stops_on_no(tmp_path, monkeypatch):
     result = runner.invoke(app, ["add", str(note), "--vault", str(vault)], input="n\n")
 
     assert result.exit_code == 1
-    assert "about $0.00" in result.output
+    assert re.search(r"about \$0\.\d+", result.output)
     assert "Continue?" in result.output
     assert model.calls == []
     assert not list((vault / "wiki").iterdir())

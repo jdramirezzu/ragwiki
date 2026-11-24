@@ -16,12 +16,19 @@ from ragwiki.vault import Vault
 
 # Instructions and JSON template around the source in each prompt.
 PROMPT_OVERHEAD = 200
-# A plan is a short list of slugs, titles and one-line summaries.
-PLAN_REPLY = 400
-# Written pages restate the part with citations; long parts are summarized.
-WRITE_REPLY_BASE = 300
-WRITE_REPLY_RATIO = 1.5
-WRITE_REPLY_MAX = 4_000
+# Reply sizes fitted on real DeepSeek ingestions (tests/test_estimate.py keeps the data):
+# ten short Spanish notes and five English papers. Even a short note gets several pages
+# and updates to existing ones, so the written reply has a large fixed part.
+PLAN_REPLY_BASE = 800
+PLAN_REPLY_RATIO = 0.1
+WRITE_REPLY_BASE = 8_000
+WRITE_REPLY_RATIO = 1.2
+WRITE_REPLY_MAX = 32_000
+# The wiki grows while a batch is ingested: each part adds pages, so later plan calls read
+# a longer index and later write calls receive existing pages to update.
+PAGES_PER_PART = 4
+INDEX_TOKENS_PER_PAGE = 45
+PAGE_TOKENS = 850
 # A photo cannot be measured without paying for its transcription, so a page of notes is
 # assumed: what the image costs to read and how much text comes out of it.
 PHOTO_INPUT = 1_500
@@ -38,13 +45,19 @@ class Estimate:
     """None when no price is configured, so the cost is unknown rather than free."""
 
 
-def _pages_context(vault: Vault) -> int:
-    """Tokens of the existing pages a write call is likely to receive for updating."""
+def reply_tokens(part: int) -> tuple[int, int]:
+    """The forecast reply tokens of the plan and write calls for a part of `part` tokens."""
+    plan = PLAN_REPLY_BASE + int(part * PLAN_REPLY_RATIO)
+    write = min(WRITE_REPLY_MAX, WRITE_REPLY_BASE + int(part * WRITE_REPLY_RATIO))
+    return plan, write
+
+
+def _page_size(vault: Vault) -> int:
+    """Average tokens of one page: measured in this vault, or a typical page."""
     slugs = vault.page_slugs()
     if not slugs:
-        return 0
-    total = sum(estimate_tokens(vault.read_page(slug).body) for slug in slugs)
-    return total // len(slugs) * min(MAX_UPDATES // 2, len(slugs))
+        return PAGE_TOKENS
+    return sum(estimate_tokens(vault.read_page(slug).body) for slug in slugs) // len(slugs)
 
 
 def estimate_ingest(
@@ -64,7 +77,8 @@ def estimate_ingest(
     known = {e["sha256"] for key, e in vault.sources().items() if vault.in_wiki(key)}
     fixed = estimate_tokens(SYSTEM + vault.schema()) + PROMPT_OVERHEAD
     index = estimate_tokens(vault.index())
-    pages = _pages_context(vault)
+    page_count = len(vault.page_slugs())
+    page_size = _page_size(vault)
     files = calls = input_tokens = output_tokens = 0
 
     for path in paths:
@@ -86,9 +100,11 @@ def estimate_ingest(
             ]
         for part in sizes:
             calls += 2
-            input_tokens += (fixed + part + index) + (fixed + part + pages)
-            reply = WRITE_REPLY_BASE + int(part * WRITE_REPLY_RATIO)
-            output_tokens += PLAN_REPLY + min(WRITE_REPLY_MAX, reply)
+            updates = page_size * min(MAX_UPDATES // 2, page_count)
+            input_tokens += (fixed + part + index) + (fixed + part + updates)
+            output_tokens += sum(reply_tokens(part))
+            page_count += PAGES_PER_PART
+            index += PAGES_PER_PART * INDEX_TOKENS_PER_PAGE
 
     priced = price_input > 0 or price_output > 0
     usd = (input_tokens * price_input + output_tokens * price_output) / 1_000_000

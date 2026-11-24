@@ -2,7 +2,7 @@ from conftest import ScriptedModel
 from files import PNG
 from test_ingest import CELLS, ENERGY, PLAN, SMALL_WINDOW, WRITE
 
-from ragwiki.estimate import estimate_ingest
+from ragwiki.estimate import estimate_ingest, reply_tokens
 from ragwiki.ingest import ingest
 
 
@@ -56,3 +56,46 @@ def test_a_photo_adds_a_transcription_call(vault, tmp_path):
     estimate = estimate_ingest(vault, [path])
 
     assert (estimate.files, estimate.calls) == (1, 3)
+
+
+# Real DeepSeek ingestions: (part tokens, plan reply, write reply). Ten short Spanish decision
+# records and five English arXiv papers (one in two parts), both on 2026-11-24 and 11-23.
+MEASURED = {
+    "es": [
+        (936, 662, 4498),
+        (390, 680, 5658),
+        (871, 1068, 16657),
+        (675, 643, 5498),
+        (514, 1081, 6148),
+        (584, 881, 11257),
+        (737, 865, 7182),
+        (836, 1224, 5916),
+        (1939, 1018, 14486),
+        (651, 5763, 18625),
+    ],
+    "en": [
+        (8664, 1050, 6996),
+        (10448, 636, 19904),
+        (12874, 3531, 23302),
+        (12269, 4521, 28840),
+        (15650, 1072, 21599),
+        (7029, 1079, 29923),
+    ],
+}
+
+
+def test_reply_forecasts_stay_close_to_real_ingestions():
+    for name, rows in MEASURED.items():
+        real = sum(plan + write for _, plan, write in rows)
+        forecast = sum(sum(reply_tokens(part)) for part, _, _ in rows)
+        assert abs(forecast - real) / real < 0.2, (name, forecast, real)
+
+
+def test_later_files_in_one_batch_read_a_bigger_wiki(vault, note):
+    first = note("a.md", "# Alpha\n\n" + "alpha words here. " * 40)
+    second = note("b.md", "# Beta\n\n" + "beta words there. " * 40)
+
+    alone = [estimate_ingest(vault, [path]).input_tokens for path in (first, second)]
+    together = estimate_ingest(vault, [first, second]).input_tokens
+
+    assert together > sum(alone)

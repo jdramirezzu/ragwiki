@@ -1,10 +1,17 @@
 # ragwiki
 
-**Vector search or a WikiLLM? Build either one from your own documents, and let your
-questions decide.** ragwiki turns PDFs, Word, PowerPoint and text files into a vector search
-index (RAG), a wiki that a language model writes and keeps linked (WikiLLM), or both, and
-answers with the same model either way. Every claim links back to the paragraph it came
-from.
+**Vector search, a WikiLLM, or another kind of RAG? Build them from your own documents, and
+let your questions decide.** ragwiki turns PDFs, Word, PowerPoint and text files into a vector
+search index (RAG), a wiki that a language model writes and keeps linked (WikiLLM), or both,
+and answers with the same model either way. It also compares kinds of RAG on your files
+(keyword, vector, hybrid, reranked, with wider context) without calling a model. Every claim
+links back to the paragraph it came from, in English or Spanish.
+
+| You want to know | ragwiki gives you |
+|---|---|
+| Is a WikiLLM worth its cost for my files? | Both answers side by side, with tokens, time, cost and a recommendation |
+| Which search finds my answers best? | A free ranking of five kinds of RAG on your own questions |
+| Where did this claim come from? | A click on the citation opens the source paragraph |
 
 [Leer en español](README.es.md)
 

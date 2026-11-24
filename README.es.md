@@ -1,10 +1,18 @@
 # ragwiki
 
-**¿Búsqueda vectorial o WikiLLM? Construye cualquiera de las dos con tus propios documentos y
+**¿Búsqueda vectorial, WikiLLM u otro tipo de RAG? Constrúyelos con tus propios documentos y
 deja que tus preguntas decidan.** ragwiki convierte archivos PDF, Word, PowerPoint y de texto
 en un índice de búsqueda vectorial (RAG), en una wiki que un modelo de lenguaje escribe y
 mantiene enlazada (WikiLLM), o en ambas, y responde con el mismo modelo en los dos casos.
-Cada afirmación enlaza al párrafo del que salió.
+También compara tipos de RAG sobre tus archivos (por palabras, vectorial, híbrida, con
+reordenador y con más contexto) sin llamar a un modelo. Cada afirmación enlaza al párrafo del
+que salió, en español o en inglés.
+
+| Quieres saber | ragwiki te da |
+|---|---|
+| ¿Vale la pena el costo de una WikiLLM para mis archivos? | Las dos respuestas lado a lado, con tokens, tiempo, costo y una recomendación |
+| ¿Qué búsqueda encuentra mejor mis respuestas? | Una clasificación gratuita de cinco tipos de RAG con tus propias preguntas |
+| ¿De dónde salió esta afirmación? | Un clic en la cita abre el párrafo de origen |
 
 [Read in English](README.md)
 

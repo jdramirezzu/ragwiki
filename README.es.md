@@ -55,6 +55,8 @@ clave se guarda en memoria, nunca en disco) o con las variables `RAGWIKI_*` de m
 4. **Resultados.** Juzga cada par, descarga todo en CSV o JSONL y lee la recomendación: la
    WikiLLM se sugiere solo cuando responde claramente mejor (una diferencia de al menos
    0,10 con cinco o más preguntas evaluadas); si no, la búsqueda vectorial, que cuesta menos.
+5. **Tipos de RAG.** Compara gratis la búsqueda por palabras, vectorial, híbrida, con
+   reordenador y con más contexto sobre tus preguntas, y luego responde con las mejores.
 
 | | Búsqueda vectorial (RAG) | WikiLLM |
 |---|---|---|
@@ -63,6 +65,42 @@ clave se guarda en memoria, nunca en disco) o con las variables `RAGWIKI_*` de m
 | Cada pregunta | 1 llamada al modelo | Hasta 8 llamadas al modelo |
 | Mejor para | Datos puntuales; archivos que cambian seguido | Preguntas que unen varios documentos |
 | Además obtienes | Nada para leer | Una wiki enlazada que puedes recorrer en Obsidian |
+
+### Tipos de RAG
+
+La búsqueda vectorial es una receta entre varias. La pestaña **Tipos de RAG** (paso 5)
+compara recetas de recuperación que responden igual, con los párrafos que encuentran:
+
+| Tipo | Cómo encuentra los párrafos |
+|---|---|
+| Por palabras (BM25) | Palabras exactas. Instantánea, sin índice |
+| Vectorial | Significado, con embeddings |
+| Híbrida | Las dos listas unidas por posición (reciprocal rank fusion) |
+| Híbrida + reordenador | Un modelo local relee los 30 mejores y los reordena |
+| Vectorial + vecinos | Cada párrafo llega con el anterior y el siguiente |
+
+Escribe preguntas con su respuesta esperada (`pregunta | términos clave`) y pulsa **Comparar
+las búsquedas**: no se llama al modelo. Cada tipo se califica según traiga un párrafo con la
+respuesta entre los primeros `k` y en qué posición (1 si es el primero, ½ si es el
+segundo…). Después responde con los tipos que valga la pena pagar, una llamada por pregunta
+y tipo, y mira cuál coincide con las respuestas esperadas, con tokens y costo. Las citas
+siempre apuntan al párrafo recuperado.
+
+Con los documentos en español del estudio (27 archivos, 11 preguntas parafraseadas), cuántas
+veces cada tipo puso el documento correcto primero y entre los tres primeros:
+
+| Tipo | Primero | Entre los 3 primeros | s / pregunta (CPU) |
+|---|---|---|---|
+| BM25 | 9 / 11 | 11 / 11 | 0,06 |
+| Vectorial (MiniLM multilingüe) | 7 / 11 | 8 / 11 | 0,04 |
+| Híbrida | 8 / 11 | 9 / 11 | 0,11 |
+| Híbrida + reordenador (`bge-reranker-v2-m3-int8`) | 8 / 11 | 8 / 11 | ~14 |
+| Híbrida + reordenador en inglés (`ms-marco-MiniLM-L-6-v2`) | 4 / 11 | 6 / 11 | 2,0 |
+| Vectorial + vecinos | 7 / 11 | 8 / 11 | 0,04 |
+
+La mejor búsqueda depende de los archivos: documentos cortos con palabras distintivas
+favorecen la búsqueda por palabras; preguntas parafraseadas favorecen el significado. Por eso
+el laboratorio la mide sobre los tuyos.
 
 ### Español e inglés
 
@@ -195,6 +233,7 @@ editor: los enlaces y el grafo funcionan, y una cita te lleva al párrafo exacto
 | M1 | Carpeta, ingesta de Markdown, preguntas con citas verificadas | Hecho |
 | M2 | PDF, archivos de ofimática, fotos de apuntes a mano, fuentes largas, estimación de costo | Hecho |
 | Laboratorio | Construir búsqueda vectorial o una WikiLLM con tus archivos, preguntar con cualquiera, comparar ambas y recibir una recomendación | Hecho |
+| Tipos de RAG | Comparar gratis la búsqueda por palabras, vectorial, híbrida, con reordenador y con más contexto, y responder con la mejor | Hecho |
 | M3 | Respaldo de búsqueda en el texto original, `lint`, guardar respuestas como páginas | Planeado |
 | Después | Interfaz gráfica, tarjetas de estudio, wikis compartidas | Se reciben ideas |
 

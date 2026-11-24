@@ -53,6 +53,8 @@ in memory, never written to disk) or with the `RAGWIKI_*` variables below.
    recommendation: the WikiLLM is suggested only when it answers clearly better (a gap of
    at least 0.10 over five or more evaluated questions); otherwise vector search, which
    costs less.
+5. **Kinds of RAG.** Compare keyword, vector, hybrid, reranked and wider-context
+   retrieval on your questions for free, then answer with the best ones.
 
 | | Vector search (RAG) | WikiLLM |
 |---|---|---|
@@ -61,6 +63,40 @@ in memory, never written to disk) or with the `RAGWIKI_*` variables below.
 | Each question | 1 model call | Up to 8 model calls |
 | Best at | Single facts; files that change often | Questions that join several documents |
 | You also get | Nothing to read | A linked wiki you can browse in Obsidian |
+
+### Kinds of RAG
+
+Vector search is one recipe among several. The **Kinds of RAG** tab (step 5) compares
+retrieval recipes that all answer the same way, from the paragraphs they find:
+
+| Kind | How it finds paragraphs |
+|---|---|
+| Keyword search (BM25) | Exact words. Instant, no index |
+| Vector search | Meaning, with embeddings |
+| Hybrid | Both lists merged by reciprocal rank |
+| Hybrid + reranker | A local cross-encoder rereads the best 30 and reorders them |
+| Vector + neighbours | Each paragraph comes with the one before and after it |
+
+Write questions with their expected answer (`question | key terms`) and press **Compare the
+searches**: no model is called. Each kind is scored on whether a paragraph with the answer
+is among the first `k`, and how high (1 when first, ½ when second…). Then answer with the
+kinds worth paying for, one call per question and kind, and see which one matches the
+expected answers, with tokens and cost. Citations always point to the retrieved paragraph.
+
+On the study's Spanish documents (27 files, 11 paraphrased questions), how often each kind
+put the right document first and within the first three:
+
+| Kind | First | In the first 3 | s / question (CPU) |
+|---|---|---|---|
+| BM25 | 9 / 11 | 11 / 11 | 0.06 |
+| Vector (multilingual MiniLM) | 7 / 11 | 8 / 11 | 0.04 |
+| Hybrid | 8 / 11 | 9 / 11 | 0.11 |
+| Hybrid + reranker (`bge-reranker-v2-m3-int8`) | 8 / 11 | 8 / 11 | ~14 |
+| Hybrid + English reranker (`ms-marco-MiniLM-L-6-v2`) | 4 / 11 | 6 / 11 | 2.0 |
+| Vector + neighbours | 7 / 11 | 8 / 11 | 0.04 |
+
+The best search depends on the files: short documents with distinctive words favour
+keywords, paraphrased questions favour meaning. That is why the lab measures it on yours.
 
 ### Spanish and English
 
@@ -186,6 +222,7 @@ links and the graph work, and a citation takes you to the exact source paragraph
 | M1 | Vault, Markdown ingestion, questions with verified citations | Done |
 | M2 | PDF, office files, photos of handwritten notes, long sources, cost estimate | Done |
 | Lab | Build vector search or a WikiLLM from your files, ask with either, compare both and get a recommendation | Done |
+| Kinds of RAG | Compare keyword, vector, hybrid, reranked and wider-context retrieval for free, then answer with the best | Done |
 | M3 | Source-text search fallback, `lint`, saving answers as pages | Planned |
 | Later | Graphical interface, flashcards, shared wikis | Ideas welcome |
 
